@@ -1,5 +1,7 @@
 
 class Validators {
+
+  // email validation
   static String? validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return 'Email is required';
@@ -11,6 +13,7 @@ class Validators {
     return null;
   }
 
+  // password validation (min 6 characters, max 18 characters, at least one number, one uppercase letter, one special character)
   static String? validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Password is required';

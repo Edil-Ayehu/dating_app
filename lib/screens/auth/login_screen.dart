@@ -1,13 +1,4 @@
-import 'package:dating_app/utils/validators.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:another_flushbar/flushbar.dart';
-import '../../providers/auth_provider.dart';
-import '../../widgets/custom_button.dart';
-import '../../widgets/custom_text_field.dart';
-import '../home/home_screen.dart';
-import 'signup_screen.dart';
+import 'package:dating_app/export.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -29,13 +20,39 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _showErrorSnackbar(String message) {
+  void _showSnackbar(String message, {bool isError = true}) {
     Flushbar(
       message: message,
-      icon: Icon(Icons.error_outline, size: 28.0, color: Colors.red[300]),
+      icon: Icon(isError ? Icons.error_outline : Icons.check_circle_outline,
+          size: 28.0, color: isError ? Colors.red[300] : Colors.green[300]),
       duration: Duration(seconds: 3),
-      leftBarIndicatorColor: Colors.red[300],
+      leftBarIndicatorColor: isError ? Colors.red[300] : Colors.green[300],
     ).show(context);
+  }
+
+  Future<void> _resetPassword() async {
+    if (_emailController.text.isEmpty) {
+      _showSnackbar('Please enter your email address');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await context
+          .read<AuthProvider>()
+          .resetPassword(_emailController.text.trim());
+      _showSnackbar('Password reset email sent. Check your inbox.',
+          isError: false);
+    } catch (e) {
+      _showSnackbar('Error: ${e.toString()}');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -52,15 +69,18 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Text(
                   'Welcome Back',
-                  style: Theme.of(context).textTheme.bodyLarge,
+                  style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                        fontSize: 44,
+                      ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 32),
+                Gap(50),
                 CustomTextField(
                   controller: _emailController,
                   hintText: 'Email',
                   icon: Icons.email,
                   validator: Validators.validateEmail,
+                  keyboardType: TextInputType.emailAddress,
                 ),
                 SizedBox(height: 16),
                 CustomTextField(
@@ -70,11 +90,32 @@ class _LoginScreenState extends State<LoginScreen> {
                   isPassword: true,
                   validator: Validators.validatePassword,
                 ),
+                Gap(10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ForgotPasswordScreen()),
+                      );
+                    },
+                    child: Text(
+                      'Forgot Password?',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ),
+                ),
                 SizedBox(height: 24),
                 _isLoading
                     ? Center(
                         child: LoadingAnimationWidget.staggeredDotsWave(
-                          color: Theme.of(context).primaryColor,
+                          color: Theme.of(context).colorScheme.primary,
                           size: 50,
                         ),
                       )
@@ -90,12 +131,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                     _emailController.text.trim(),
                                     _passwordController.text.trim(),
                                   );
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (context) => HomeScreen()),
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                    builder: (context) => HomeScreen()),
+                                (route) => false,
                               );
                             } catch (e) {
-                              _showErrorSnackbar(e.toString());
+                              _showSnackbar('Login failed: ${e.toString()}');
                             } finally {
                               setState(() {
                                 _isLoading = false;

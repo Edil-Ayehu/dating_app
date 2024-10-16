@@ -1,6 +1,5 @@
 import 'package:dating_app/export.dart';
-import 'package:dating_app/providers/auth_provider.dart';
-import 'package:dating_app/screens/auth/login_screen.dart';
+import 'package:dating_app/screens/profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,67 +11,69 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   List<UserModel> users = [
     UserModel(
-        id: '1',
-        name: 'Alice',
-        age: 25,
-        bio: 'Love hiking and traveling',
-        photoUrl: 'https://example.com/alice.jpg'),
+      id: '1',
+      name: 'Alice',
+      age: 25,
+      bio: 'Love hiking and traveling',
+      photoUrl: 'https://example.com/alice.jpg',
+      email: 'alice@example.como',
+      gender: 'Female',
+      interestedIn: 'Male',
+    ),
     UserModel(
-        id: '2',
-        name: 'Bob',
-        age: 28,
-        bio: 'Foodie and movie enthusiast',
-        photoUrl: 'https://example.com/bob.jpg'),
+      id: '2',
+      name: 'Bob',
+      age: 28,
+      bio: 'Foodie and movie enthusiast',
+      photoUrl: 'https://example.com/bob.jpg',
+      email: 'bob@example.com',
+      gender: 'Male',
+      interestedIn: 'Female',
+    ),
     UserModel(
-        id: '3',
-        name: 'Charlie',
-        age: 23,
-        bio: 'Musician and coffee lover',
-        photoUrl: 'https://example.com/charlie.jpg'),
-    UserModel(
-        id: '4',
-        name: 'Charlie',
-        age: 23,
-        bio: 'Musician and coffee lover',
-        photoUrl: 'https://example.com/charlie.jpg'),
-    UserModel(
-        id: '5',
-        name: 'Charlie',
-        age: 23,
-        bio: 'Musician and coffee lover',
-        photoUrl: 'https://example.com/charlie.jpg'),
+      id: '3',
+      name: 'Charlie',
+      age: 23,
+      bio: 'Musician and coffee lover',
+      photoUrl: 'https://example.com/charlie.jpg',
+      email: 'charlie@example.com',
+      gender: 'Male',
+      interestedIn: 'Female',
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-appBar: AppBar(
-  title: Text('Dating App'),
-  actions: [
-    IconButton(
-      icon: Icon(Icons.person),
-      onPressed: () {},
-    ),
-    IconButton(
-      icon: Icon(Provider.of<ThemeProvider>(context).darkMode
-          ? Icons.light_mode
-          : Icons.dark_mode),
-      onPressed: () {
-        Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
-      },
-    ),
-    IconButton(
-      icon: Icon(Icons.exit_to_app),
-      onPressed: () async {
-        await context.read<AuthProvider>().signOut();
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => LoginScreen()),
-        );
-      },
-    ),
-  ],
-),
+      appBar: AppBar(
+        title: Text('Dating App'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.person),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context)=>ProfileScreen()));
+            },
+          ),
+          IconButton(
+            icon: Icon(Provider.of<ThemeProvider>(context).darkMode
+                ? Icons.light_mode
+                : Icons.dark_mode),
+            onPressed: () {
+              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.exit_to_app),
+            onPressed: () async {
+              await context.read<AuthProvider>().signOut();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+              );
+            },
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
