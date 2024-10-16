@@ -1,0 +1,11 @@
+export 'package:dating_app/providers/theme_provider.dart';
+export 'package:dating_app/screens/matches/matches_screen.dart';
+export 'package:flutter/material.dart';
+export 'package:provider/provider.dart';
+export 'package:swipeable_tile/swipeable_tile.dart';
+export 'package:dating_app/models/user_model.dart';
+export 'package:dating_app/firebase_options.dart';
+export 'package:dating_app/providers/auth_provider.dart';
+export 'package:firebase_core/firebase_core.dart';
+export 'package:hive_flutter/hive_flutter.dart';
+export 'app.dart';

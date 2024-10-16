@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'config/theme.dart';
+import 'providers/theme_provider.dart';
 import 'screens/auth/login_screen.dart';
 
 class DatingApp extends StatelessWidget {
@@ -7,11 +9,15 @@ class DatingApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Dating App',
-      theme: AppTheme.lightTheme,
-      home: LoginScreen(),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Dating App',
+          theme: themeProvider.darkMode ? AppTheme.darkTheme : AppTheme.lightTheme,
+          home: LoginScreen(),
+        );
+      },
     );
   }
 }
