@@ -8,6 +8,7 @@ class DatingApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Dating App',
       theme: AppTheme.lightTheme,
       home: LoginScreen(),
