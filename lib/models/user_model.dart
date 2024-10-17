@@ -4,6 +4,7 @@ class UserModel {
   final String email;
   final int age;
   final String bio;
+  final String about;
   final String gender;
   final String interestedIn;
   final List<String> photoUrls;
@@ -15,6 +16,7 @@ class UserModel {
     required this.email,
     required this.age,
     required this.bio,
+    required this.about,
     required this.gender,
     required this.interestedIn,
     required this.photoUrls,
@@ -28,6 +30,7 @@ class UserModel {
       'email': email,
       'age': age,
       'bio': bio,
+      'about': about,
       'gender': gender,
       'interestedIn': interestedIn,
       'photoUrls': photoUrls,
@@ -42,6 +45,7 @@ class UserModel {
       email: map['email'],
       age: map['age'],
       bio: map['bio'],
+      about: map['about'] ?? '',
       gender: map['gender'],
       interestedIn: map['interestedIn'],
       photoUrls: List<String>.from(map['photoUrls'] ?? []),
@@ -55,6 +59,7 @@ class UserModel {
     String? email,
     int? age,
     String? bio,
+    String? about,
     String? gender,
     String? interestedIn,
     List<String>? photoUrls,
@@ -66,6 +71,7 @@ class UserModel {
       email: email ?? this.email,
       age: age ?? this.age,
       bio: bio ?? this.bio,
+      about: about ?? this.about,
       gender: gender ?? this.gender,
       interestedIn: interestedIn ?? this.interestedIn,
       photoUrls: photoUrls ?? this.photoUrls,

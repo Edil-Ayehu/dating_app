@@ -1,6 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dating_app/export.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 
 class UserDetailsScreen extends StatefulWidget {
   final UserModel user;
@@ -12,7 +12,6 @@ class UserDetailsScreen extends StatefulWidget {
 }
 
 class _UserDetailsScreenState extends State<UserDetailsScreen> {
-  int _currentImageIndex = 0;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,14 +32,25 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               ),
             ),
             flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                widget.user.name,
-                style: GoogleFonts.eagleLake(
-                  color: Colors.white,
-                  shadows: [Shadow(color: Colors.black, blurRadius: 2)],
-                ),
+              titlePadding: EdgeInsets.zero,
+              background: _buildMainImage(),
+              title: Stack(
+                children: [
+                  Positioned(
+                    left: 10,
+                    bottom: 16,
+                    child: Text(
+                      '${widget.user.name[0].toUpperCase()}${widget.user.name.substring(1)}, ${widget.user.age}',
+                      style: GoogleFonts.montserrat(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        shadows: [Shadow(color: Colors.black, blurRadius: 2)],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              background: _buildImageCarousel(),
             ),
           ),
           SliverToBoxAdapter(
@@ -51,8 +61,15 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 children: [
                   _buildInfoCard(
                     context,
-                    title: 'About',
+                    title: 'Bio',
                     content: widget.user.bio,
+                    icon: Icons.short_text,
+                  ),
+                  SizedBox(height: 16),
+                  _buildInfoCard(
+                    context,
+                    title: 'About',
+                    content: widget.user.about,
                     icon: Icons.person,
                   ),
                   SizedBox(height: 16),
@@ -65,6 +82,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                   ),
                   SizedBox(height: 16),
                   _buildInterestsSection(context),
+                  SizedBox(height: 16),
+                  _buildAdditionalImages(),
                 ],
               ),
             ),
@@ -74,53 +93,130 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     );
   }
 
-  Widget _buildImageCarousel() {
+  Widget _buildMainImage() {
     return Stack(
+      fit: StackFit.expand,
       children: [
-        CarouselSlider(
-          options: CarouselOptions(
-            height: 500,
-            viewportFraction: 1.0,
-            enlargeCenterPage: false,
-            autoPlay: false,
-            onPageChanged: (index, reason) {
-              setState(() {
-                _currentImageIndex = index;
-              });
-            },
-          ),
-          items: widget.user.photoUrls.map((url) {
-            return Builder(
-              builder: (BuildContext context) {
-                return Container(
-                  width: MediaQuery.of(context).size.width,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: NetworkImage(url),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                );
-              },
-            );
-          }).toList(),
-        ),
-        Positioned(
-          bottom: 10,
-          right: 10,
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.7),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '${_currentImageIndex + 1}/${widget.user.photoUrls.length}',
-              style: TextStyle(color: Colors.white, fontSize: 14),
+        widget.user.photoUrls.isNotEmpty
+            ? CachedNetworkImage(
+                imageUrl: widget.user.photoUrls[0],
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Center(
+                  child: CircularProgressIndicator(),
+                ),
+                errorWidget: (context, url, error) => Icon(Icons.error),
+              )
+            : Image.asset(
+                'assets/images/6.jpg',
+                fit: BoxFit.cover,
+              ),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.transparent, Colors.black],
+              stops: [0.5, 1.0],
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAdditionalImages() {
+    if (widget.user.photoUrls.length <= 1) {
+      return SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'More Photos',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        SizedBox(height: 8),
+        SizedBox(
+          height: 180,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: widget.user.photoUrls.length - 1,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: GestureDetector(
+                  onTap: () =>
+                      _showFullScreenImage(widget.user.photoUrls[index + 1]),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: CachedNetworkImage(
+                      imageUrl: widget.user.photoUrls[index + 1],
+                      fit: BoxFit.cover,
+                      width: 140,
+                      height: 180,
+                      placeholder: (context, url) => Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                      errorWidget: (context, url, error) => Icon(Icons.error),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showFullScreenImage(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: SizedBox(
+            width: double.infinity,
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                InteractiveViewer(
+                  panEnabled: true,
+                  boundaryMargin: EdgeInsets.all(20),
+                  minScale: 0.5,
+                  maxScale: 4,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                      errorWidget: (context, url, error) => Icon(Icons.error),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

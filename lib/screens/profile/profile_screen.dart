@@ -15,6 +15,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _ageController;
   late TextEditingController _bioController;
   late TextEditingController _interestController;
+  late TextEditingController _aboutController;
 
   String _gender = '';
   String _interestedIn = '';
@@ -41,6 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _nameController = TextEditingController(text: _user!.name);
         _ageController = TextEditingController(text: _user!.age.toString());
         _bioController = TextEditingController(text: _user!.bio);
+        _aboutController = TextEditingController(text: _user!.about);
         _gender = _user!.gender;
         _interestedIn = _user!.interestedIn;
         _interests = _user!.interests;
@@ -141,6 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           name: _nameController.text,
           age: int.parse(_ageController.text),
           bio: _bioController.text,
+          about: _aboutController.text, // Add this line
           gender: _gender,
           interestedIn: _interestedIn,
           photoUrls: photoUrls,
@@ -333,6 +336,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               value!.isEmpty ? 'Bio is required' : null,
                         ),
                         SizedBox(height: 16),
+                        SizedBox(height: 16),
+                        Text('About',
+                            style:
+                                TextStyle(fontSize: 18, color: Colors.black)),
+                        SizedBox(height: 8),
+                        CustomTextField(
+                          controller: _aboutController,
+                          hintText: 'Tell us more about yourself',
+                          icon: Icons.description,
+                        ),
                         Text('Gender',
                             style:
                                 TextStyle(fontSize: 18, color: Colors.black)),

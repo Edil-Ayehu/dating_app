@@ -17,6 +17,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _nameController = TextEditingController();
   final _ageController = TextEditingController();
   final _bioController = TextEditingController();
+  final _aboutController = TextEditingController();
   String _gender = '';
   String _interestedIn = '';
   bool _isLoading = false;
@@ -29,6 +30,7 @@ class _SignupScreenState extends State<SignupScreen> {
     _nameController.dispose();
     _ageController.dispose();
     _bioController.dispose();
+    _aboutController.dispose();
     super.dispose();
   }
 
@@ -56,6 +58,7 @@ class _SignupScreenState extends State<SignupScreen> {
           interestedIn: _interestedIn,
           photoUrls: [],
           interests: [],
+          about: _aboutController.text,
         );
 
         // Store user profile in Firestore
