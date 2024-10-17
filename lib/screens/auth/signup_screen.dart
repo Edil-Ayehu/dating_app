@@ -1,4 +1,5 @@
 import 'package:dating_app/export.dart';
+import 'package:dating_app/home.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 class SignupScreen extends StatefulWidget {
@@ -54,6 +55,7 @@ class _SignupScreenState extends State<SignupScreen> {
           gender: _gender,
           interestedIn: _interestedIn,
           photoUrl: '', // You can add photo upload functionality later
+          interests: [],
         );
 
         // Store user profile in Firestore
@@ -61,7 +63,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
         // Navigate to home screen
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => HomeScreen()),
+          MaterialPageRoute(builder: (context) => Home()),
           (route) => false,
         );
       } catch (e) {

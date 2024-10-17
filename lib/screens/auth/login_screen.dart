@@ -1,4 +1,5 @@
 import 'package:dating_app/export.dart';
+import 'package:dating_app/home.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -133,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   );
                               Navigator.of(context).pushAndRemoveUntil(
                                 MaterialPageRoute(
-                                    builder: (context) => HomeScreen()),
+                                    builder: (context) => Home()),
                                 (route) => false,
                               );
                             } catch (e) {

@@ -1,4 +1,5 @@
 import 'package:dating_app/export.dart';
+import 'package:dating_app/home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -14,13 +15,14 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuthState() async {
-    await Future.delayed(Duration(seconds: 2)); // Simulating a splash screen delay
+    await Future.delayed(
+        Duration(seconds: 2)); // Simulating a splash screen delay
 
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       // User is logged in, navigate to HomeScreen
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => HomeScreen()),
+        MaterialPageRoute(builder: (context) => Home()),
       );
     } else {
       // User is not logged in, navigate to LoginScreen

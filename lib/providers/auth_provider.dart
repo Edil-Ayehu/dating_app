@@ -27,7 +27,7 @@ class AuthProvider extends ChangeNotifier {
       throw e;
     }
   }
-  
+
   // sign in (email and password)
   Future<void> signIn(String email, String password) async {
     try {
@@ -60,38 +60,46 @@ class AuthProvider extends ChangeNotifier {
 
   // method to reset password
   Future<void> resetPassword(String email) async {
-  try {
-    await _auth.sendPasswordResetEmail(email: email);
-  } catch (e) {
-    print('Error sending password reset email: $e');
-    throw e;
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      print('Error sending password reset email: $e');
+      throw e;
+    }
   }
-}
 
   // method to get current user
-Future<UserModel> getCurrentUser() async {
-  try {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(_user!.uid)
-        .get();
-    return UserModel.fromMap(userDoc.data() as Map<String, dynamic>);
-  } catch (e) {
-    print('Error getting current user: $e');
-    throw e;
+  Future<UserModel?> getCurrentUser() async {
+    try {
+      if (_user == null) {
+        print('Current user is null');
+        return null;
+      }
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_user!.uid)
+          .get();
+      if (!userDoc.exists) {
+        print('User document does not exist');
+        return null;
+      }
+      return UserModel.fromMap(userDoc.data() as Map<String, dynamic>);
+    } catch (e) {
+      print('Error getting current user: $e');
+      return null;
+    }
   }
-}
 
   // method to update user profile
-Future<void> updateUserProfile(UserModel user) async {
-  try {
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.id)
-        .update(user.toMap());
-  } catch (e) {
-    print('Error updating user profile: $e');
-    throw e;
+  Future<void> updateUserProfile(UserModel user) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.id)
+          .update(user.toMap());
+    } catch (e) {
+      print('Error updating user profile: $e');
+      throw e;
+    }
   }
-}
 }

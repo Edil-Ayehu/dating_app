@@ -1,5 +1,7 @@
 import 'package:dating_app/export.dart';
-import 'package:dating_app/screens/profile/profile_screen.dart';
+import 'package:dating_app/screens/user_details_screen.dart';
+import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -9,51 +11,54 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<UserModel> users = [
-    UserModel(
-      id: '1',
-      name: 'Alice',
-      age: 25,
-      bio: 'Love hiking and traveling',
-      photoUrl: 'https://example.com/alice.jpg',
-      email: 'alice@example.como',
-      gender: 'Female',
-      interestedIn: 'Male',
-    ),
-    UserModel(
-      id: '2',
-      name: 'Bob',
-      age: 28,
-      bio: 'Foodie and movie enthusiast',
-      photoUrl: 'https://example.com/bob.jpg',
-      email: 'bob@example.com',
-      gender: 'Male',
-      interestedIn: 'Female',
-    ),
-    UserModel(
-      id: '3',
-      name: 'Charlie',
-      age: 23,
-      bio: 'Musician and coffee lover',
-      photoUrl: 'https://example.com/charlie.jpg',
-      email: 'charlie@example.com',
-      gender: 'Male',
-      interestedIn: 'Female',
-    ),
-  ];
+  List<UserModel> users = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+  }
+
+  Future<void> _loadUsers() async {
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final currentUser = await authProvider.getCurrentUser();
+
+      if (currentUser == null) {
+        throw Exception('Current user is null');
+      }
+
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('id', isNotEqualTo: currentUser.id)
+          .get();
+
+      setState(() {
+        users = querySnapshot.docs
+            .map((doc) => UserModel.fromMap(doc.data() as Map<String, dynamic>))
+            .toList();
+      });
+    } catch (e) {
+      print('Error loading users: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading users: ${e.toString()}')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dating App'),
+        title: Text(
+          'Dating App',
+          style: GoogleFonts.eagleLake(),
+        ),
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? Colors.grey[900]
+            : Colors.white,
+        elevation: 0,
         actions: [
-          IconButton(
-            icon: Icon(Icons.person),
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context)=>ProfileScreen()));
-            },
-          ),
           IconButton(
             icon: Icon(Provider.of<ThemeProvider>(context).darkMode
                 ? Icons.light_mode
@@ -74,175 +79,102 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: users.isNotEmpty
-                ? SwipeableTile.card(
-                    color: Theme.of(context).cardColor,
-                    shadow: BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: Offset(0, 4),
-                    ),
-                    horizontalPadding: 16,
-                    verticalPadding: 16,
-                    direction: SwipeDirection.horizontal,
-                    onSwiped: (direction) {
-                      setState(() {
-                        if (direction == SwipeDirection.endToStart) {
-                          // Dislike
-                          users.removeAt(0);
-                        } else if (direction == SwipeDirection.startToEnd) {
-                          // Like
-                          users.removeAt(0);
-                          // TODO: Implement match logic
-                        }
-                      });
-                    },
-                    backgroundBuilder: (context, direction, progress) {
-                      return AnimatedBuilder(
-                        animation: progress,
-                        builder: (context, child) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              color: direction == SwipeDirection.endToStart
-                                  ? Colors.red.withOpacity(progress.value)
-                                  : Colors.green.withOpacity(progress.value),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                direction == SwipeDirection.endToStart
-                                    ? Icons.close
-                                    : Icons.favorite,
-                                color: Colors.white,
-                                size: 48,
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    key: Key(users[0].id),
-                    child: buildUserCard(users[0]),
-                  )
-                : Center(
-                    child: Text(
-                      'No more profiles to show',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    // Dislike action
-                    if (users.isNotEmpty) {
-                      setState(() {
-                        users.removeAt(0);
-                      });
+      body: users.isNotEmpty
+          ? SizedBox(
+              width: double.infinity,
+              child: CardSwiper(
+                cardsCount: users.length,
+                cardBuilder:
+                    (context, index, percentThresholdX, percentThresholdY) =>
+                        buildUserCard(users[index]),
+                onSwipe: (previousIndex, currentIndex, direction) {
+                  setState(() {
+                    if (direction == CardSwiperDirection.left) {
+                      // Dislike
+                      users.removeAt(previousIndex);
+                    } else if (direction == CardSwiperDirection.right) {
+                      // Like
+                      users.removeAt(previousIndex);
+                      // TODO: Implement match logic
                     }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    backgroundColor: Colors.white,
-                    shape: CircleBorder(),
-                    padding: EdgeInsets.all(20),
-                  ),
-                  child: Icon(Icons.close, color: Colors.red),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Like action
-                    if (users.isNotEmpty) {
-                      setState(() {
-                        users.removeAt(0);
-                        // TODO: Implement match logic
-                      });
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    shape: CircleBorder(),
-                    padding: EdgeInsets.all(20),
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.green,
-                  ),
-                  child: Icon(Icons.favorite, color: Colors.green),
-                ),
-              ],
+                  });
+                  return true;
+                },
+                numberOfCardsDisplayed: 1,
+                backCardOffset: Offset(0, 40),
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                isDisabled: users.length < 2,
+              ),
+            )
+          : Center(
+              child: Text(
+                'No more profiles to show',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Matches',
-          ),
-        ],
-        onTap: (index) {
-          if (index == 1) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => MatchesScreen()),
-            );
-          }
-        },
-      ),
     );
   }
 
   Widget buildUserCard(UserModel user) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        image: DecorationImage(
-          image: NetworkImage(user.photoUrl),
-          fit: BoxFit.cover,
-        ),
-      ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UserDetailsScreen(user: user),
+          ),
+        );
+      },
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+          image: DecorationImage(
+            image: NetworkImage(user.photoUrl),
+            fit: BoxFit.cover,
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${user.name}, ${user.age}',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${user.name}, ${user.age}',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                user.bio,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
+                SizedBox(height: 8),
+                Text(
+                  user.bio,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
                 ),
-              ),
-            ],
+                SizedBox(height: 8),
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: user.interests.map((interest) => Chip(
+                    label: Text(interest, style: TextStyle(color: Colors.black)),
+                    backgroundColor: Colors.white.withOpacity(0.7),
+                  )).toList(),
+                ),
+              ],
+            ),
           ),
         ),
       ),
