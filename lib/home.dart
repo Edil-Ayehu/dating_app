@@ -2,11 +2,10 @@ import 'package:dating_app/export.dart';
 import 'package:dating_app/providers/home_provider.dart';
 import 'package:dating_app/screens/chat/chat_screen.dart';
 import 'package:dating_app/screens/profile/profile_screen.dart';
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 
 class Home extends StatelessWidget {
-  Home({
-    super.key,
-  });
+  Home({super.key});
 
   final List<Widget> pages = [
     HomeScreen(),
@@ -14,6 +13,7 @@ class Home extends StatelessWidget {
     ChatScreen(),
     ProfileScreen(),
   ];
+
   @override
   Widget build(BuildContext context) {
     final homeProvider = Provider.of<HomeProvider>(context);
@@ -24,43 +24,25 @@ class Home extends StatelessWidget {
         index: homeProvider.currentPage,
         children: pages,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: homeProvider.currentPage,
-        onTap: (value) {
-          homeProvider.changePage(value);
-        },
-        backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
-        selectedItemColor: Colors.green,
-        unselectedItemColor: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-        selectedLabelStyle: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-        unselectedLabelStyle: TextStyle(
-          fontSize: 15,
-        ),
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-            backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Matches',
-            backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.message),
-            label: 'Chat',
-            backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-            backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
-          ),
+      bottomNavigationBar: CurvedNavigationBar(
+        index: homeProvider.currentPage,
+        height: 65.0,
+        items: <Widget>[
+          Icon(Icons.home, size: 30, color: Colors.white),
+          Icon(Icons.favorite, size: 30, color: Colors.white),
+          Icon(Icons.message, size: 30, color: Colors.white),
+          Icon(Icons.person, size: 30, color: Colors.white),
         ],
+        color:
+            isDarkMode ? Colors.black : Theme.of(context).colorScheme.primary,
+        buttonBackgroundColor:
+            isDarkMode ? Colors.black : Theme.of(context).colorScheme.primary,
+        backgroundColor: isDarkMode ? Colors.grey[900]! : Colors.white,
+        animationCurve: Curves.easeInOut,
+        animationDuration: Duration(milliseconds: 300),
+        onTap: (index) {
+          homeProvider.changePage(index);
+        },
       ),
     );
   }

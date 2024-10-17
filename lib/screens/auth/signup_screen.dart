@@ -54,7 +54,7 @@ class _SignupScreenState extends State<SignupScreen> {
           bio: _bioController.text.trim(),
           gender: _gender,
           interestedIn: _interestedIn,
-          photoUrl: '', // You can add photo upload functionality later
+          photoUrls: [],
           interests: [],
         );
 

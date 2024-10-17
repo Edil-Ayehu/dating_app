@@ -130,9 +130,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLoading = true;
       });
       try {
-        String photoUrl = _user!.photoUrl;
+        List<String> photoUrls = _user!.photoUrls;
         if (_image != null) {
-          photoUrl = await _uploadImage();
+          photoUrls = await _uploadImage();
+          setState(() {
+            _user = _user!.copyWith(photoUrls: photoUrls);
+          });
         }
         final updatedUser = _user!.copyWith(
           name: _nameController.text,
@@ -140,10 +143,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           bio: _bioController.text,
           gender: _gender,
           interestedIn: _interestedIn,
-          photoUrl: photoUrl,
+          photoUrls: photoUrls,
           interests: _interests,
         );
         await context.read<AuthProvider>().updateUserProfile(updatedUser);
+        setState(() {
+          _user = updatedUser;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Profile updated successfully')),
         );
@@ -155,15 +161,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       } finally {
         setState(() {
           _isLoading = false;
+          _image = null; // Reset the _image after updating
         });
       }
     }
   }
 
-  Future<String> _uploadImage() async {
+  Future<List<String>> _uploadImage() async {
     try {
       final storageRef = FirebaseStorage.instance.ref();
-      final imageRef = storageRef.child('profile_images/${_user!.id}.jpg');
+      final imageRef = storageRef.child(
+          'profile_images/${_user!.id}/${DateTime.now().millisecondsSinceEpoch}.jpg');
 
       print('Attempting to upload image...');
       await imageRef.putFile(_image!);
@@ -173,7 +181,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       String downloadURL = await imageRef.getDownloadURL();
       print('Download URL obtained: $downloadURL');
 
-      return downloadURL;
+      List<String> updatedPhotoUrls = [downloadURL, ..._user!.photoUrls];
+      return updatedPhotoUrls;
     } catch (e) {
       print('Error uploading image: $e');
       if (e is FirebaseException) {
@@ -231,45 +240,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Form(
                     key: _formKey,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Stack(
+                        Align(
                           alignment: Alignment.center,
-                          children: [
-                            CircleAvatar(
-                              radius: 60,
-                              backgroundImage: _user!.photoUrl.isNotEmpty
-                                  ? NetworkImage(_user!.photoUrl)
-                                  : AssetImage('assets/images/6.jpg')
-                                      as ImageProvider,
-                              onBackgroundImageError: (_, __) {
-                                // If the image fails to load, we'll update the state to show a default icon
-                                setState(() {
-                                  _user = _user!.copyWith(photoUrl: '');
-                                });
-                              },
-                              child: _user!.photoUrl.isEmpty
-                                  ? Icon(Icons.person,
-                                      size: 60, color: Colors.grey)
-                                  : null,
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: GestureDetector(
-                                onTap: _showImageSourceActionSheet,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).primaryColor,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  padding: EdgeInsets.all(8),
-                                  child: Icon(Icons.camera_alt,
-                                      size: 20, color: Colors.white),
+                          child: Stack(
+                            children: [
+                              Container(
+                                width: 120,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border:
+                                      Border.all(width: 2, color: Colors.green),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(60),
+                                  child: _user!.photoUrls.isNotEmpty
+                                      ? Image.network(
+                                          _user!.photoUrls[0],
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Image.asset(
+                                          'assets/images/6.jpg',
+                                          fit: BoxFit.cover,
+                                        ),
                                 ),
                               ),
-                            ),
-                          ],
+                              Positioned(
+                                top: 0,
+                                right: 0,
+                                child: GestureDetector(
+                                  onTap: _showImageSourceActionSheet,
+                                  child: Container(
+                                    padding: EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).primaryColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.camera_alt,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         SizedBox(height: 16),
                         Text('Full Name',
@@ -386,9 +404,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         SizedBox(height: 16),
                         _buildInterestsSection(),
                         SizedBox(height: 24),
-                        CustomButton(
-                          text: 'Update Profile',
-                          onPressed: _updateProfile,
+                        SizedBox(
+                          width: double.infinity,
+                          child: CustomButton(
+                            text: 'Update Profile',
+                            onPressed: _updateProfile,
+                          ),
                         ),
                       ],
                     ),

@@ -129,7 +129,9 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           image: DecorationImage(
-            image: NetworkImage(user.photoUrl),
+            image: user.photoUrls.isNotEmpty
+                ? NetworkImage(user.photoUrls[0])
+                : AssetImage('assets/images/6.jpg') as ImageProvider,
             fit: BoxFit.cover,
           ),
         ),
@@ -168,10 +170,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 Wrap(
                   spacing: 4,
                   runSpacing: 4,
-                  children: user.interests.map((interest) => Chip(
-                    label: Text(interest, style: TextStyle(color: Colors.black)),
-                    backgroundColor: Colors.white.withOpacity(0.7),
-                  )).toList(),
+                  children: user.interests
+                      .map((interest) => Chip(
+                            label: Text(interest,
+                                style: TextStyle(color: Colors.black)),
+                            backgroundColor: Colors.white.withOpacity(0.7),
+                          ))
+                      .toList(),
                 ),
               ],
             ),

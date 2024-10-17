@@ -6,8 +6,8 @@ class UserModel {
   final String bio;
   final String gender;
   final String interestedIn;
-  final String photoUrl;
-    final List<String> interests;
+  final List<String> photoUrls;
+  final List<String> interests;
 
   UserModel({
     required this.id,
@@ -17,7 +17,7 @@ class UserModel {
     required this.bio,
     required this.gender,
     required this.interestedIn,
-    required this.photoUrl,
+    required this.photoUrls,
     required this.interests,
   });
 
@@ -30,7 +30,7 @@ class UserModel {
       'bio': bio,
       'gender': gender,
       'interestedIn': interestedIn,
-      'photoUrl': photoUrl,
+      'photoUrls': photoUrls,
       'interests': interests,
     };
   }
@@ -44,32 +44,32 @@ class UserModel {
       bio: map['bio'],
       gender: map['gender'],
       interestedIn: map['interestedIn'],
-      photoUrl: map['photoUrl'],
+      photoUrls: List<String>.from(map['photoUrls'] ?? []),
       interests: List<String>.from(map['interests'] ?? []),
     );
   }
 
   UserModel copyWith({
-  String? id,
-  String? name,
-  String? email,
-  int? age,
-  String? bio,
-  String? gender,
-  String? interestedIn,
-  String? photoUrl,
-  List<String>? interests,
-}) {
-  return UserModel(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    email: email ?? this.email,
-    age: age ?? this.age,
-    bio: bio ?? this.bio,
-    gender: gender ?? this.gender,
-    interestedIn: interestedIn ?? this.interestedIn,
-    photoUrl: photoUrl ?? this.photoUrl,
-    interests: interests ?? this.interests,
-  );
-}
+    String? id,
+    String? name,
+    String? email,
+    int? age,
+    String? bio,
+    String? gender,
+    String? interestedIn,
+    List<String>? photoUrls,
+    List<String>? interests,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      age: age ?? this.age,
+      bio: bio ?? this.bio,
+      gender: gender ?? this.gender,
+      interestedIn: interestedIn ?? this.interestedIn,
+      photoUrls: photoUrls ?? this.photoUrls,
+      interests: interests ?? this.interests,
+    );
+  }
 }
