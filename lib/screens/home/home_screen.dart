@@ -1,7 +1,4 @@
 import 'package:dating_app/export.dart';
-import 'package:dating_app/screens/user_details_screen.dart';
-import 'package:flutter_card_swiper/flutter_card_swiper.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,42 +13,51 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUsers();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUsers();
+    });
   }
 
-  Future<void> _loadUsers() async {
-    try {
-      final authProvider = context.read<AuthProvider>();
-      final currentUser = await authProvider.getCurrentUser();
+Future<void> _loadUsers() async {
+  try {
+    final authProvider = context.read<AuthProvider>();
+    UserModel? currentUser;
 
-      if (currentUser == null) {
-        throw Exception('Current user is null');
-      }
-
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('id', isNotEqualTo: currentUser.id)
-          .get();
-
-      setState(() {
-        users = querySnapshot.docs
-            .map((doc) => UserModel.fromMap(doc.data() as Map<String, dynamic>))
-            .toList();
-      });
-    } catch (e) {
-      print('Error loading users: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading users: ${e.toString()}')),
-      );
+    // Try to get the current user multiple times with a delay
+    for (int i = 0; i < 3; i++) {
+      currentUser = await authProvider.getCurrentUser();
+      if (currentUser != null) break;
+      await Future.delayed(Duration(seconds: 1));
     }
+
+    if (currentUser == null) {
+      throw Exception('Unable to retrieve current user data');
+    }
+
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('id', isNotEqualTo: currentUser.id)
+        .get();
+
+    setState(() {
+      users = querySnapshot.docs
+          .map((doc) => UserModel.fromMap(doc.data() as Map<String, dynamic>))
+          .toList();
+    });
+  } catch (e) {
+    print('Error loading users: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error loading users: ${e.toString()}')),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Dating App',
+          'D.A',
           style: GoogleFonts.eagleLake(),
         ),
         backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -128,59 +134,69 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          image: DecorationImage(
-            image: user.photoUrls.isNotEmpty
-                ? NetworkImage(user.photoUrls[0])
-                : AssetImage('assets/images/6.jpg') as ImageProvider,
-            fit: BoxFit.cover,
-          ),
         ),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: user.photoUrls.isNotEmpty
+                  ? FancyShimmerImage(
+                      imageUrl: user.photoUrls[0],
+                      boxFit: BoxFit.cover,
+                      errorWidget:
+                          Image.asset('assets/images/6.jpg', fit: BoxFit.cover),
+                    )
+                  : Image.asset('assets/images/6.jpg', fit: BoxFit.cover),
             ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${user.name}, ${user.age}',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
                 ),
-                SizedBox(height: 8),
-                Text(
-                  user.bio,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: user.interests
-                      .map((interest) => Chip(
-                            label: Text(interest,
-                                style: TextStyle(color: Colors.black)),
-                            backgroundColor: Colors.white.withOpacity(0.7),
-                          ))
-                      .toList(),
-                ),
-              ],
+              ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${user.name}, ${user.age}',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    user.bio,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: user.interests
+                        .map((interest) => Chip(
+                              label: Text(interest,
+                                  style: TextStyle(color: Colors.black)),
+                              backgroundColor: Colors.white.withOpacity(0.7),
+                            ))
+                        .toList(),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

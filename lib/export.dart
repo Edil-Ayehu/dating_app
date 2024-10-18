@@ -23,4 +23,9 @@ export 'package:image_picker/image_picker.dart';
 export 'package:firebase_storage/firebase_storage.dart';
 export 'package:cloud_firestore/cloud_firestore.dart';
 export 'package:dating_app/screens/auth/forgot_password_screen.dart';
-
+export 'package:google_fonts/google_fonts.dart';
+export 'package:dating_app/screens/user_details_screen.dart';
+export 'package:fancy_shimmer_image/fancy_shimmer_image.dart';
+export 'package:flutter_card_swiper/flutter_card_swiper.dart';
+export 'package:cached_network_image/cached_network_image.dart';
+export 'package:dating_app/home.dart';

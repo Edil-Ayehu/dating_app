@@ -1,6 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dating_app/export.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class UserDetailsScreen extends StatefulWidget {
   final UserModel user;
@@ -37,16 +35,30 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               title: Stack(
                 children: [
                   Positioned(
-                    left: 10,
+                    left: 60,
                     bottom: 16,
-                    child: Text(
-                      '${widget.user.name[0].toUpperCase()}${widget.user.name.substring(1)}, ${widget.user.age}',
-                      style: GoogleFonts.montserrat(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        shadows: [Shadow(color: Colors.black, blurRadius: 2)],
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${widget.user.name[0].toUpperCase()}${widget.user.name.substring(1)}, ${widget.user.age}',
+                          style: GoogleFonts.montserrat(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(color: Colors.black, blurRadius: 2)
+                            ],
+                          ),
+                        ),
+                        Text(
+                          widget.user.bio,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -59,29 +71,37 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoCard(
-                    context,
-                    title: 'Bio',
-                    content: widget.user.bio,
-                    icon: Icons.short_text,
+                  Text(
+                    'About',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    widget.user.about,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   SizedBox(height: 16),
-                  _buildInfoCard(
-                    context,
-                    title: 'About',
-                    content: widget.user.about,
-                    icon: Icons.person,
+                  Text(
+                    'Interests',
+                    style: Theme.of(context).textTheme.titleSmall,
                   ),
-                  SizedBox(height: 16),
-                  _buildInfoCard(
-                    context,
-                    title: 'Details',
-                    content:
-                        '${widget.user.age} years old\n${widget.user.gender}\nInterested in ${widget.user.interestedIn}',
-                    icon: Icons.info,
+                  SizedBox(height: 8),
+                  Wrap(
+                    spacing: 15,
+                    runSpacing: 4,
+                    children: widget.user.interests
+                        .map((interest) => Chip(
+                              color: WidgetStateProperty.all(Colors.white),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(22),
+                              ),
+                              label: Text(interest),
+                              backgroundColor: Theme.of(context)
+                                  .primaryColor
+                                  .withOpacity(0.1),
+                            ))
+                        .toList(),
                   ),
-                  SizedBox(height: 16),
-                  _buildInterestsSection(context),
                   SizedBox(height: 16),
                   _buildAdditionalImages(),
                 ],
@@ -134,7 +154,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       children: [
         Text(
           'More Photos',
-          style: Theme.of(context).textTheme.titleLarge,
+          style: Theme.of(context).textTheme.titleSmall,
         ),
         SizedBox(height: 8),
         SizedBox(

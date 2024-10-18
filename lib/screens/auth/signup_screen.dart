@@ -1,5 +1,4 @@
 import 'package:dating_app/export.dart';
-import 'package:dating_app/home.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 class SignupScreen extends StatefulWidget {
@@ -172,7 +171,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   'Select Gender',
                   style: TextStyle(fontSize: 18, color: Colors.grey),
                 ),
-                items: ['Male', 'Female', 'Other'].map((String value) {
+                items: ['Male', 'Female'].map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(
@@ -201,7 +200,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   'Interested In',
                   style: TextStyle(fontSize: 18, color: Colors.grey),
                 ),
-                items: ['Men', 'Women', 'Both'].map((String value) {
+                items: ['Male', 'Female'].map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(

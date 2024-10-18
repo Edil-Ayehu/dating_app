@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:dating_app/export.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:dating_app/screens/profile/edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,7 +14,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _ageController;
   late TextEditingController _bioController;
-  late TextEditingController _interestController;
   late TextEditingController _aboutController;
 
   String _gender = '';
@@ -27,7 +26,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _interestController = TextEditingController();
     _loadUserData();
   }
 
@@ -61,12 +59,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _addInterest(String interest) {
-    setState(() {
-      _interests.add(interest);
-    });
-  }
-
   void _removeInterest(String interest) {
     setState(() {
       _interests.remove(interest);
@@ -82,17 +74,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _image = File(pickedFile.path);
         });
+        await _uploadImageToFirebase();
       }
-    } on PlatformException catch (e) {
-      print('Failed to pick image: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick image: ${e.message}')),
-      );
     } catch (e) {
       print('Error picking image: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error picking image. Please try again.')),
       );
+    }
+  }
+
+  Future<void> _uploadImageToFirebase() async {
+    if (_image == null) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final storageRef = FirebaseStorage.instance.ref();
+      final imageRef = storageRef.child(
+          'profile_images/${_user!.id}/${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+      await imageRef.putFile(_image!);
+      final downloadURL = await imageRef.getDownloadURL();
+
+      List<String> updatedPhotoUrls = [downloadURL, ..._user!.photoUrls];
+      final updatedUser = _user!.copyWith(photoUrls: updatedPhotoUrls);
+
+      await context.read<AuthProvider>().updateUserProfile(updatedUser);
+
+      setState(() {
+        _user = updatedUser;
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Profile picture updated successfully')),
+      );
+    } catch (e) {
+      print('Error uploading image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Error updating profile picture. Please try again.')),
+      );
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -126,75 +154,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<void> _updateProfile() async {
-    if (_formKey.currentState!.validate()) {
+void _navigateToEditProfile() {
+  Navigator.of(context)
+      .push(
+    MaterialPageRoute(
+      builder: (context) => EditProfileScreen(user: _user!),
+    ),
+  )
+      .then((updatedUser) {
+    if (updatedUser != null) {
       setState(() {
-        _isLoading = true;
+        _user = updatedUser;
+        _interests = updatedUser.interests;
       });
-      try {
-        List<String> photoUrls = _user!.photoUrls;
-        if (_image != null) {
-          photoUrls = await _uploadImage();
-          setState(() {
-            _user = _user!.copyWith(photoUrls: photoUrls);
-          });
-        }
-        final updatedUser = _user!.copyWith(
-          name: _nameController.text,
-          age: int.parse(_ageController.text),
-          bio: _bioController.text,
-          about: _aboutController.text, // Add this line
-          gender: _gender,
-          interestedIn: _interestedIn,
-          photoUrls: photoUrls,
-          interests: _interests,
-        );
-        await context.read<AuthProvider>().updateUserProfile(updatedUser);
-        setState(() {
-          _user = updatedUser;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Profile updated successfully')),
-        );
-      } catch (e) {
-        print('Error updating profile: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating profile: ${e.toString()}')),
-        );
-      } finally {
-        setState(() {
-          _isLoading = false;
-          _image = null; // Reset the _image after updating
-        });
-      }
     }
-  }
-
-  Future<List<String>> _uploadImage() async {
-    try {
-      final storageRef = FirebaseStorage.instance.ref();
-      final imageRef = storageRef.child(
-          'profile_images/${_user!.id}/${DateTime.now().millisecondsSinceEpoch}.jpg');
-
-      print('Attempting to upload image...');
-      await imageRef.putFile(_image!);
-      print('Image uploaded successfully');
-
-      print('Attempting to get download URL...');
-      String downloadURL = await imageRef.getDownloadURL();
-      print('Download URL obtained: $downloadURL');
-
-      List<String> updatedPhotoUrls = [downloadURL, ..._user!.photoUrls];
-      return updatedPhotoUrls;
-    } catch (e) {
-      print('Error uploading image: $e');
-      if (e is FirebaseException) {
-        print('Firebase error code: ${e.code}');
-        print('Firebase error message: ${e.message}');
-      }
-      throw e;
-    }
-  }
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -208,6 +183,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 : Colors.black,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.edit),
+            onPressed: _navigateToEditProfile,
+          ),
+        ],
         backgroundColor: Theme.of(context).brightness == Brightness.dark
             ? Colors.grey[900]
             : Colors.white,
@@ -260,9 +241,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(60),
                                   child: _user!.photoUrls.isNotEmpty
-                                      ? Image.network(
-                                          _user!.photoUrls[0],
+                                      ? CachedNetworkImage(
+                                          imageUrl: _user!.photoUrls[0],
                                           fit: BoxFit.cover,
+                                          placeholder: (context, url) =>
+                                              CircularProgressIndicator(),
+                                          errorWidget: (context, url, error) =>
+                                              Icon(Icons.error),
                                         )
                                       : Image.asset(
                                           'assets/images/6.jpg',
@@ -271,12 +256,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ),
                               Positioned(
-                                top: 0,
+                                bottom: 0,
                                 right: 0,
                                 child: GestureDetector(
                                   onTap: _showImageSourceActionSheet,
                                   child: Container(
-                                    padding: EdgeInsets.all(4),
+                                    padding: EdgeInsets.all(8),
                                     decoration: BoxDecoration(
                                       color: Theme.of(context).primaryColor,
                                       shape: BoxShape.circle,
@@ -297,133 +282,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style:
                                 TextStyle(fontSize: 18, color: Colors.black)),
                         SizedBox(height: 8),
-                        CustomTextField(
-                          controller: _nameController,
-                          hintText: 'Full Name',
-                          icon: Icons.person,
-                          validator: (value) =>
-                              value!.isEmpty ? 'Name is required' : null,
-                        ),
+                        Text(_user!.name),
                         SizedBox(height: 16),
                         Text('Age',
                             style:
                                 TextStyle(fontSize: 18, color: Colors.black)),
                         SizedBox(height: 8),
-                        CustomTextField(
-                          controller: _ageController,
-                          hintText: 'Age',
-                          icon: Icons.cake,
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value!.isEmpty) return 'Age is required';
-                            int? age = int.tryParse(value);
-                            if (age == null || age < 18) {
-                              return 'You must be at least 18 years old';
-                            }
-                            return null;
-                          },
-                        ),
+                        Text(_user!.age.toString()),
                         SizedBox(height: 16),
                         Text('Bio',
                             style:
                                 TextStyle(fontSize: 18, color: Colors.black)),
                         SizedBox(height: 8),
-                        CustomTextField(
-                          controller: _bioController,
-                          hintText: 'Bio',
-                          icon: Icons.description,
-                          validator: (value) =>
-                              value!.isEmpty ? 'Bio is required' : null,
-                        ),
-                        SizedBox(height: 16),
+                        Text(_user!.bio),
                         SizedBox(height: 16),
                         Text('About',
                             style:
                                 TextStyle(fontSize: 18, color: Colors.black)),
                         SizedBox(height: 8),
-                        CustomTextField(
-                          controller: _aboutController,
-                          hintText: 'Tell us more about yourself',
-                          icon: Icons.description,
-                        ),
+                        Text(_user!.about),
+                        SizedBox(height: 16),
                         Text('Gender',
                             style:
                                 TextStyle(fontSize: 18, color: Colors.black)),
                         SizedBox(height: 8),
-                        DropdownButtonFormField<String>(
-                          value: _gender,
-                          decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.person_outline),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10)),
-                          ),
-                          hint: Text(
-                            'Select Gender',
-                            style: TextStyle(fontSize: 18, color: Colors.grey),
-                          ),
-                          items:
-                              ['Male', 'Female', 'Other'].map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(
-                                value,
-                                style: TextStyle(
-                                    fontSize: 18, color: Colors.black),
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _gender = value!;
-                            });
-                          },
-                          validator: (value) =>
-                              value == null ? 'Gender is required' : null,
-                        ),
+                        Text(_user!.gender),
                         SizedBox(height: 16),
-                        Text('Interested In',
+                        Text('Interests',
                             style:
                                 TextStyle(fontSize: 18, color: Colors.black)),
-                        SizedBox(height: 8),
-                        DropdownButtonFormField<String>(
-                          value: _interestedIn,
-                          decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.favorite),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10)),
-                          ),
-                          hint: Text(
-                            'Interested In',
-                            style: TextStyle(fontSize: 18, color: Colors.grey),
-                          ),
-                          items: ['Men', 'Women', 'Both'].map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(
-                                value,
-                                style: TextStyle(
-                                    fontSize: 18, color: Colors.black),
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _interestedIn = value!;
-                            });
-                          },
-                          validator: (value) =>
-                              value == null ? 'Preference is required' : null,
-                        ),
-                        SizedBox(height: 16),
                         _buildInterestsSection(),
-                        SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: CustomButton(
-                            text: 'Update Profile',
-                            onPressed: _updateProfile,
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -431,43 +319,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildInterestsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Interests', style: TextStyle(fontSize: 18, color: Colors.black)),
-        Wrap(
-          spacing: 8,
-          children: _interests
-              .map((interest) => Chip(
-                    label: Text(interest),
-                    onDeleted: () => _removeInterest(interest),
-                  ))
-              .toList(),
-        ),
-        TextField(
-          controller: _interestController,
-          decoration: InputDecoration(
-            hintText: 'Add an interest',
-            hintStyle: TextStyle(fontSize: 18, color: Colors.black),
-            suffixIcon: IconButton(
-              icon: Icon(Icons.add),
-              onPressed: () {
-                if (_interestController.text.isNotEmpty) {
-                  _addInterest(_interestController.text);
-                  _interestController.clear();
-                }
-              },
-            ),
-          ),
-          onSubmitted: (value) {
-            if (value.isNotEmpty) {
-              _addInterest(value);
-              _interestController.clear();
-            }
-          },
-        ),
-      ],
-    );
-  }
+Widget _buildInterestsSection() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Wrap(
+        spacing: 8,
+        children: _interests
+            .map((interest) => Chip(
+                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                  label: Text(interest),
+                ))
+            .toList(),
+      ),
+    ],
+  );
+}
 }

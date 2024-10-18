@@ -10,32 +10,32 @@ class AppTheme {
       elevation: 0,
     ),
     textTheme: TextTheme(
-      titleLarge: TextStyle(
+      titleLarge: GoogleFonts.montserrat(
         color: Colors.black,
         fontSize: 34,
         fontWeight: FontWeight.bold,
       ),
-      titleMedium: TextStyle(
+      titleMedium: GoogleFonts.montserrat(
         color: Colors.black,
         fontSize: 26,
         fontWeight: FontWeight.bold,
       ),
-      titleSmall: TextStyle(
+      titleSmall: GoogleFonts.montserrat(
         color: Colors.black,
         fontSize: 20,
         fontWeight: FontWeight.bold,
       ),
-      bodyLarge: TextStyle(
+      bodyLarge: GoogleFonts.montserrat(
         color: Colors.black,
         fontSize: 22,
         fontWeight: FontWeight.bold,
       ),
-      bodyMedium: TextStyle(
+      bodyMedium: GoogleFonts.montserrat(
         color: Colors.black,
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: FontWeight.bold,
       ),
-      bodySmall: TextStyle(
+      bodySmall: GoogleFonts.montserrat(
         color: Colors.black,
         fontSize: 14,
         fontWeight: FontWeight.bold,
@@ -52,32 +52,32 @@ class AppTheme {
       elevation: 0,
     ),
     textTheme: TextTheme(
-      titleLarge: TextStyle(
+      titleLarge: GoogleFonts.montserrat(
         color: Colors.white.withOpacity(0.8),
         fontSize: 34,
         fontWeight: FontWeight.bold,
       ),
-      titleMedium: TextStyle(
+      titleMedium: GoogleFonts.montserrat(
         color: Colors.white.withOpacity(0.8),
         fontSize: 26,
         fontWeight: FontWeight.bold,
       ),
-      titleSmall: TextStyle(
+      titleSmall: GoogleFonts.montserrat(
         color: Colors.white.withOpacity(0.8),
         fontSize: 20,
         fontWeight: FontWeight.bold,
       ),
-      bodyLarge: TextStyle(
+      bodyLarge: GoogleFonts.montserrat(
         color: Colors.white.withOpacity(0.8),
         fontSize: 22,
         fontWeight: FontWeight.bold,
       ),
-      bodyMedium: TextStyle(
+      bodyMedium: GoogleFonts.montserrat(
         color: Colors.white.withOpacity(0.8),
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: FontWeight.bold,
       ),
-      bodySmall: TextStyle(
+      bodySmall: GoogleFonts.montserrat(
         color: Colors.white.withOpacity(0.8),
         fontSize: 14,
         fontWeight: FontWeight.bold,

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   User? _user;
+  UserModel? _currentUser;
 
   User? get user => _user;
 
@@ -102,4 +103,18 @@ class AuthProvider extends ChangeNotifier {
       throw e;
     }
   }
+
+Future<void> initializeCurrentUser() async {
+  User? firebaseUser = FirebaseAuth.instance.currentUser;
+  if (firebaseUser != null) {
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(firebaseUser.uid)
+        .get();
+    if (userDoc.exists) {
+      _currentUser = UserModel.fromMap(userDoc.data() as Map<String, dynamic>);
+      notifyListeners();
+    }
+  }
+}
 }
