@@ -1,4 +1,5 @@
 import 'package:dating_app/export.dart';
+import 'package:dating_app/screens/liked_users_screen.dart';
 import 'package:multi_select_flutter/chip_display/multi_select_chip_display.dart';
 import 'package:multi_select_flutter/dialog/multi_select_dialog_field.dart';
 import 'package:multi_select_flutter/util/multi_select_item.dart';
@@ -211,6 +212,15 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: Icon(Icons.favorite),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => LikedUsersScreen()),
+              );
+            },
+          ),
+          IconButton(
             icon: Icon(Provider.of<ThemeProvider>(context).darkMode
                 ? Icons.light_mode
                 : Icons.dark_mode),
@@ -240,39 +250,44 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Stack(
                       children: [
                         CardSwiper(
-  cardsCount: filteredUsers.length,
-  cardBuilder: (context, index, percentThresholdX, percentThresholdY) =>
-      buildUserCard(filteredUsers[index]),
-  onSwipe: (previousIndex, currentIndex, direction) async {
-    if (previousIndex < filteredUsers.length) {
-      UserModel swipedUser = filteredUsers[previousIndex];
-      setState(() {
-        if (direction == CardSwiperDirection.left) {
-          showDislikeOverlay = true;
-        } else if (direction == CardSwiperDirection.right) {
-          showLikeOverlay = true;
-        }
-        filteredUsers.removeAt(previousIndex);
-      });
+                          cardsCount: filteredUsers.length,
+                          cardBuilder: (context, index, percentThresholdX,
+                                  percentThresholdY) =>
+                              buildUserCard(filteredUsers[index]),
+                          onSwipe:
+                              (previousIndex, currentIndex, direction) async {
+                            if (previousIndex < filteredUsers.length) {
+                              UserModel swipedUser =
+                                  filteredUsers[previousIndex];
+                              setState(() {
+                                if (direction == CardSwiperDirection.left) {
+                                  showDislikeOverlay = true;
+                                } else if (direction ==
+                                    CardSwiperDirection.right) {
+                                  showLikeOverlay = true;
+                                }
+                                filteredUsers.removeAt(previousIndex);
+                              });
 
-      if (direction == CardSwiperDirection.right) {
-        await _saveLikedUser(swipedUser.id);
-      }
+                              if (direction == CardSwiperDirection.right) {
+                                await _saveLikedUser(swipedUser.id);
+                              }
 
-      Future.delayed(Duration(milliseconds: 500), () {
-        setState(() {
-          showLikeOverlay = false;
-          showDislikeOverlay = false;
-        });
-      });
-    }
-    return filteredUsers.length > 1;
-  },
-  numberOfCardsDisplayed: 2,
-  backCardOffset: Offset(0, 40),
-  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-  isDisabled: filteredUsers.length <= 1,
-),
+                              Future.delayed(Duration(milliseconds: 500), () {
+                                setState(() {
+                                  showLikeOverlay = false;
+                                  showDislikeOverlay = false;
+                                });
+                              });
+                            }
+                            return filteredUsers.length > 1;
+                          },
+                          numberOfCardsDisplayed: 2,
+                          backCardOffset: Offset(0, 40),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 20),
+                          isDisabled: filteredUsers.length <= 1,
+                        ),
                         if (showLikeOverlay)
                           Container(
                             color: Colors.green.withOpacity(0.5),
