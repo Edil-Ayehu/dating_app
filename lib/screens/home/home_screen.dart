@@ -240,38 +240,39 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Stack(
                       children: [
                         CardSwiper(
-                          cardsCount: filteredUsers.length,
-                          cardBuilder: (context, index, percentThresholdX,
-                                  percentThresholdY) =>
-                              buildUserCard(filteredUsers[index]),
-                          onSwipe: (previousIndex, currentIndex, direction) {
-                            setState(() {
-                              if (previousIndex < filteredUsers.length) {
-                                if (direction == CardSwiperDirection.left) {
-                                  showDislikeOverlay = true;
-                                  filteredUsers.removeAt(previousIndex);
-                                } else if (direction ==
-                                    CardSwiperDirection.right) {
-                                  showLikeOverlay = true;
-                                  filteredUsers.removeAt(previousIndex);
-                                  // TODO: Implement match logic
-                                }
-                              }
-                            });
-                            Future.delayed(Duration(milliseconds: 500), () {
-                              setState(() {
-                                showLikeOverlay = false;
-                                showDislikeOverlay = false;
-                              });
-                            });
-                            return true;
-                          },
-                          numberOfCardsDisplayed: 1,
-                          backCardOffset: Offset(0, 40),
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 20),
-                          isDisabled: filteredUsers.isEmpty,
-                        ),
+  cardsCount: filteredUsers.length,
+  cardBuilder: (context, index, percentThresholdX, percentThresholdY) =>
+      buildUserCard(filteredUsers[index]),
+  onSwipe: (previousIndex, currentIndex, direction) async {
+    if (previousIndex < filteredUsers.length) {
+      UserModel swipedUser = filteredUsers[previousIndex];
+      setState(() {
+        if (direction == CardSwiperDirection.left) {
+          showDislikeOverlay = true;
+        } else if (direction == CardSwiperDirection.right) {
+          showLikeOverlay = true;
+        }
+        filteredUsers.removeAt(previousIndex);
+      });
+
+      if (direction == CardSwiperDirection.right) {
+        await _saveLikedUser(swipedUser.id);
+      }
+
+      Future.delayed(Duration(milliseconds: 500), () {
+        setState(() {
+          showLikeOverlay = false;
+          showDislikeOverlay = false;
+        });
+      });
+    }
+    return filteredUsers.length > 1;
+  },
+  numberOfCardsDisplayed: 2,
+  backCardOffset: Offset(0, 40),
+  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+  isDisabled: filteredUsers.length <= 1,
+),
                         if (showLikeOverlay)
                           Container(
                             color: Colors.green.withOpacity(0.5),
@@ -534,5 +535,28 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _saveLikedUser(String likedUserId) async {
+    try {
+      final authProvider = context.read<AuthProvider>();
+      UserModel? currentUser = await authProvider.getCurrentUser();
+
+      if (currentUser == null) {
+        throw Exception('Unable to retrieve current user data');
+      }
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.id)
+          .update({
+        'likedUsers': FieldValue.arrayUnion([likedUserId])
+      });
+    } catch (e) {
+      print('Error saving liked user: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving liked user: ${e.toString()}')),
+      );
+    }
   }
 }
