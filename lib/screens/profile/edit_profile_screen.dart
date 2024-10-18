@@ -16,6 +16,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _bioController;
   late TextEditingController _aboutController;
   late TextEditingController _interestController;
+  late TextEditingController _cityController;
   String _gender = '';
   String _interestedIn = '';
   bool _isLoading = false;
@@ -33,6 +34,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _interestedIn = widget.user.interestedIn;
     _interests = List.from(widget.user.interests);
     _interestController = TextEditingController();
+    _cityController = TextEditingController(text: widget.user.city);
   }
 
   @override
@@ -42,6 +44,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _bioController.dispose();
     _aboutController.dispose();
     _interestController.dispose();
+    _cityController.dispose();
     super.dispose();
   }
 
@@ -74,6 +77,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           gender: _gender,
           interestedIn: _interestedIn,
           interests: _interests, // Add this line
+          city: _cityController.text,
         );
         await context.read<AuthProvider>().updateUserProfile(updatedUser);
         Navigator.of(context).pop(updatedUser);
@@ -101,7 +105,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         padding: EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text('Full Name',
@@ -138,6 +142,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 hintText: 'About',
                 icon: Icons.description,
                 maxLines: 3,
+              ),
+              SizedBox(height: 16),
+              Text('City',
+                  style: TextStyle(fontSize: 18, color: Colors.black)),
+              SizedBox(height: 8),
+              CustomTextField(
+                controller: _cityController,
+                hintText: 'City',
+                icon: Icons.location_city,
+                 validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your city';
+                  }
+                  return null;
+                },
               ),
               SizedBox(height: 16),
               Text('Gender',

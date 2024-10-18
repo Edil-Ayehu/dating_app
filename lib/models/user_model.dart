@@ -9,6 +9,7 @@ class UserModel {
   final String interestedIn;
   final List<String> photoUrls;
   final List<String> interests;
+  final String city;
 
   UserModel({
     required this.id,
@@ -21,6 +22,7 @@ class UserModel {
     required this.interestedIn,
     required this.photoUrls,
     required this.interests,
+    required this.city,
   });
 
   Map<String, dynamic> toMap() {
@@ -35,6 +37,7 @@ class UserModel {
       'interestedIn': interestedIn,
       'photoUrls': photoUrls,
       'interests': interests,
+      'city': city,
     };
   }
 
@@ -50,6 +53,7 @@ class UserModel {
       interestedIn: map['interestedIn'],
       photoUrls: List<String>.from(map['photoUrls'] ?? []),
       interests: List<String>.from(map['interests'] ?? []),
+      city: map['city'] ?? '',
     );
   }
 
@@ -64,6 +68,7 @@ class UserModel {
     String? interestedIn,
     List<String>? photoUrls,
     List<String>? interests,
+    String? city,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -76,6 +81,7 @@ class UserModel {
       interestedIn: interestedIn ?? this.interestedIn,
       photoUrls: photoUrls ?? this.photoUrls,
       interests: interests ?? this.interests,
+      city: city ?? this.city,
     );
   }
 }

@@ -17,6 +17,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _ageController = TextEditingController();
   final _bioController = TextEditingController();
   final _aboutController = TextEditingController();
+  final _cityController = TextEditingController();
   String _gender = '';
   String _interestedIn = '';
   bool _isLoading = false;
@@ -30,6 +31,7 @@ class _SignupScreenState extends State<SignupScreen> {
     _ageController.dispose();
     _bioController.dispose();
     _aboutController.dispose();
+    _cityController.dispose();
     super.dispose();
   }
 
@@ -58,6 +60,7 @@ class _SignupScreenState extends State<SignupScreen> {
           photoUrls: [],
           interests: [],
           about: _aboutController.text,
+          city: _cityController.text,
         );
 
         // Store user profile in Firestore
@@ -158,6 +161,14 @@ class _SignupScreenState extends State<SignupScreen> {
                 hintText: 'Bio',
                 icon: Icons.description,
                 validator: (value) => value!.isEmpty ? 'Bio is required' : null,
+              ),
+              SizedBox(height: 16),
+              CustomTextField(
+                controller: _cityController,
+                hintText: 'City',
+                icon: Icons.location_city,
+                validator: (value) =>
+                    value!.isEmpty ? 'City is required' : null,
               ),
               SizedBox(height: 16),
               DropdownButtonFormField<String>(

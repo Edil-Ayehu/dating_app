@@ -82,6 +82,16 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                   ),
                   SizedBox(height: 16),
                   Text(
+                    'City',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    widget.user.city,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
                     'Interests',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
