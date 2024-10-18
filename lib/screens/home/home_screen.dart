@@ -20,6 +20,9 @@ class _HomeScreenState extends State<HomeScreen> {
   List<String> selectedInterests = [];
   List<String> selectedCities = [];
 
+  bool showLikeOverlay = false;
+  bool showDislikeOverlay = false;
+
   List<String> cities = [
     'Addis Ababa',
     'Hawassa',
@@ -234,29 +237,59 @@ class _HomeScreenState extends State<HomeScreen> {
             child: filteredUsers.isNotEmpty
                 ? SizedBox(
                     width: double.infinity,
-                    child: CardSwiper(
-                      cardsCount: filteredUsers.length,
-                      cardBuilder: (context, index, percentThresholdX,
-                              percentThresholdY) =>
-                          buildUserCard(filteredUsers[index]),
-                      onSwipe: (previousIndex, currentIndex, direction) {
-                        setState(() {
-                          if (direction == CardSwiperDirection.left) {
-                            filteredUsers.removeAt(previousIndex);
-                          } else if (direction == CardSwiperDirection.right) {
-                            filteredUsers.removeAt(previousIndex);
-                            // TODO: Implement match logic
-                          }
-                        });
-                        return true;
-                      },
-                      numberOfCardsDisplayed: 1,
-                      backCardOffset: Offset(0, 40),
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                      isDisabled: filteredUsers.length < 2,
-                    ),
-                  )
+                    child: Stack(
+                      children: [
+                        CardSwiper(
+                          cardsCount: filteredUsers.length,
+                          cardBuilder: (context, index, percentThresholdX,
+                                  percentThresholdY) =>
+                              buildUserCard(filteredUsers[index]),
+                          onSwipe: (previousIndex, currentIndex, direction) {
+                            setState(() {
+                              if (previousIndex < filteredUsers.length) {
+                                if (direction == CardSwiperDirection.left) {
+                                  showDislikeOverlay = true;
+                                  filteredUsers.removeAt(previousIndex);
+                                } else if (direction ==
+                                    CardSwiperDirection.right) {
+                                  showLikeOverlay = true;
+                                  filteredUsers.removeAt(previousIndex);
+                                  // TODO: Implement match logic
+                                }
+                              }
+                            });
+                            Future.delayed(Duration(milliseconds: 500), () {
+                              setState(() {
+                                showLikeOverlay = false;
+                                showDislikeOverlay = false;
+                              });
+                            });
+                            return true;
+                          },
+                          numberOfCardsDisplayed: 1,
+                          backCardOffset: Offset(0, 40),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 20),
+                          isDisabled: filteredUsers.isEmpty,
+                        ),
+                        if (showLikeOverlay)
+                          Container(
+                            color: Colors.green.withOpacity(0.5),
+                            child: Center(
+                              child: Icon(Icons.favorite,
+                                  size: 100, color: Colors.white),
+                            ),
+                          ),
+                        if (showDislikeOverlay)
+                          Container(
+                            color: Colors.red.withOpacity(0.5),
+                            child: Center(
+                              child: Icon(Icons.close,
+                                  size: 100, color: Colors.white),
+                            ),
+                          ),
+                      ],
+                    ))
                 : Center(
                     child: Text(
                       'No profiles match your criteria',
