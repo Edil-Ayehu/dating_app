@@ -203,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'D.A',
+          'Dating App',
           style: GoogleFonts.eagleLake(),
         ),
         backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -249,48 +249,54 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: double.infinity,
                     child: Stack(
                       children: [
-                        CardSwiper(
-                          cardsCount: filteredUsers.length,
-                          cardBuilder: (context, index, percentThresholdX,
-                                  percentThresholdY) =>
-                              buildUserCard(filteredUsers[index]),
-                          onSwipe:
-                              (previousIndex, currentIndex, direction) async {
-                            if (previousIndex < filteredUsers.length) {
-                              UserModel swipedUser =
-                                  filteredUsers[previousIndex];
-                              setState(() {
-                                if (direction == CardSwiperDirection.left) {
-                                  showDislikeOverlay = true;
-                                } else if (direction ==
-                                    CardSwiperDirection.right) {
-                                  showLikeOverlay = true;
-                                }
-                              });
-
-                              if (direction == CardSwiperDirection.right) {
-                                await _saveLikedUser(swipedUser.id);
-                              }
-
-                              setState(() {
-                                filteredUsers.removeAt(previousIndex);
-                              });
-
-                              Future.delayed(Duration(milliseconds: 500), () {
+                        if (filteredUsers.length > 1)
+                          CardSwiper(
+                            cardsCount: filteredUsers.length,
+                            cardBuilder: (context, index, percentThresholdX,
+                                    percentThresholdY) =>
+                                buildUserCard(filteredUsers[index]),
+                            onSwipe:
+                                (previousIndex, currentIndex, direction) async {
+                              if (previousIndex < filteredUsers.length) {
+                                UserModel swipedUser =
+                                    filteredUsers[previousIndex];
                                 setState(() {
-                                  showLikeOverlay = false;
-                                  showDislikeOverlay = false;
+                                  if (direction == CardSwiperDirection.left) {
+                                    showDislikeOverlay = true;
+                                  } else if (direction ==
+                                      CardSwiperDirection.right) {
+                                    showLikeOverlay = true;
+                                  }
                                 });
-                              });
-                            }
-                            return filteredUsers.length > 1;
-                          },
-                          numberOfCardsDisplayed: 1,
-                          backCardOffset: Offset(0, 40),
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 20),
-                          isDisabled: filteredUsers.length <= 1,
-                        ),
+
+                                if (direction == CardSwiperDirection.right) {
+                                  await _saveLikedUser(swipedUser.id);
+                                }
+
+                                setState(() {
+                                  filteredUsers.removeAt(previousIndex);
+                                  users.remove(swipedUser);
+                                });
+
+                                Future.delayed(Duration(milliseconds: 500), () {
+                                  setState(() {
+                                    showLikeOverlay = false;
+                                    showDislikeOverlay = false;
+                                  });
+                                });
+                              }
+                              return filteredUsers.length > 1;
+                            },
+                            numberOfCardsDisplayed: 1,
+                            backCardOffset: Offset(0, 40),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 20),
+                            isDisabled: filteredUsers.length <= 1,
+                          )
+                        else if (filteredUsers.length == 1)
+                          Center(
+                            child: buildUserCard(filteredUsers[0]),
+                          ),
                         if (showLikeOverlay)
                           Container(
                             color: Colors.green.withOpacity(0.5),
@@ -307,22 +313,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                   size: 100, color: Colors.white),
                             ),
                           ),
-                        if (filteredUsers.isEmpty)
-                          Center(
-                            child: Text(
-                              'No more users exist',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ),
                       ],
-                    ))
+                    ),
+                  )
                 : Center(
                     child: Text(
                       'No profiles match your criteria',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ),
-          ),
+          )
         ],
       ),
     );
@@ -500,7 +500,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     )
                   : Image.asset('assets/images/6.jpg', fit: BoxFit.cover),
             ),
-            // Gradient overlay
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
@@ -511,7 +510,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            // User details
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
