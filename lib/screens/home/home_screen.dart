@@ -283,14 +283,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 });
                               });
                             }
-                            return filteredUsers.isNotEmpty;
+                            return filteredUsers.length > 1;
                           },
-                          numberOfCardsDisplayed:
-                              filteredUsers.length >= 2 ? 2 : 1,
+                          numberOfCardsDisplayed: 1,
                           backCardOffset: Offset(0, 40),
                           padding: EdgeInsets.symmetric(
                               horizontal: 20, vertical: 20),
-                          isDisabled: filteredUsers.isEmpty,
+                          isDisabled: filteredUsers.length <= 1,
                         ),
                         if (showLikeOverlay)
                           Container(
@@ -306,6 +305,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Center(
                               child: Icon(Icons.close,
                                   size: 100, color: Colors.white),
+                            ),
+                          ),
+                        if (filteredUsers.isEmpty)
+                          Center(
+                            child: Text(
+                              'No more users exist',
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ),
                       ],

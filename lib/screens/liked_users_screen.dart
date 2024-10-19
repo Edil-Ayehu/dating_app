@@ -1,4 +1,5 @@
 import 'package:dating_app/export.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class LikedUsersScreen extends StatefulWidget {
   const LikedUsersScreen({super.key});
@@ -60,37 +61,112 @@ class _LikedUsersScreenState extends State<LikedUsersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        title: Text('Liked Users', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
-        title: Text('Liked Users'),
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.black),
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? Center(
+              child: LoadingAnimationWidget.staggeredDotsWave(
+                color: Theme.of(context).primaryColor,
+                size: 50,
+              ),
+            )
           : likedUsers.isEmpty
-              ? Center(child: Text('No liked users yet'))
-              : ListView.builder(
-                  itemCount: likedUsers.length,
-                  itemBuilder: (context, index) {
-                    final user = likedUsers[index];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: user.photoUrls.isNotEmpty
-                            ? NetworkImage(user.photoUrls[0])
-                            : AssetImage('assets/images/6.jpg')
-                                as ImageProvider,
-                      ),
-                      title: Text('${user.name}, ${user.age}'),
-                      subtitle: Text(user.bio),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => UserDetailsScreen(user: user),
-                          ),
-                        );
-                      },
-                    );
-                  },
+              ? _buildEmptyState()
+              : _buildLikedUsersGrid(),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.favorite_border, size: 100, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
+            'No liked users yet',
+            style: TextStyle(fontSize: 18, color: Colors.grey),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Start swiping to find your match!',
+            style: TextStyle(fontSize: 14, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLikedUsersGrid() {
+    return MasonryGridView.count(
+      crossAxisCount: 2,
+      mainAxisSpacing: 4,
+      crossAxisSpacing: 4,
+      itemCount: likedUsers.length,
+      itemBuilder: (context, index) {
+        final user = likedUsers[index];
+        return GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserDetailsScreen(user: user),
+            ),
+          ),
+          child: Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            elevation: 4,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: user.photoUrls.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: user.photoUrls[0],
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            errorWidget: (context, url, error) =>
+                                Icon(Icons.error),
+                          )
+                        : Image.asset('assets/images/6.jpg', fit: BoxFit.cover),
+                  ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${user.name}, ${user.age}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        user.bio,
+                        style: TextStyle(fontSize: 12),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
