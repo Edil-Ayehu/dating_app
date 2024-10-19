@@ -123,22 +123,39 @@ class _LikedUsersScreenState extends State<LikedUsersScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: user.photoUrls.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: user.photoUrls[0],
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                            errorWidget: (context, url, error) =>
-                                Icon(Icons.error),
-                          )
-                        : Image.asset('assets/images/6.jpg', fit: BoxFit.cover),
-                  ),
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(16)),
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: user.photoUrls.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: user.photoUrls[0],
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                                errorWidget: (context, url, error) =>
+                                    Icon(Icons.error),
+                              )
+                            : Image.asset('assets/images/6.jpg',
+                                fit: BoxFit.cover),
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: CircleAvatar(
+                        backgroundColor: Colors.white,
+                        child: IconButton(
+                          icon: Icon(Icons.close, color: Colors.red),
+                          onPressed: () => _showRemoveConfirmationDialog(user),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -168,5 +185,71 @@ class _LikedUsersScreenState extends State<LikedUsersScreen> {
         );
       },
     );
+  }
+
+  Future<void> _showRemoveConfirmationDialog(UserModel user) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Remove User'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(
+                    'Are you sure you want to remove ${user.name} from your liked users?'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Remove'),
+              onPressed: () {
+                _removeLikedUser(user);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _removeLikedUser(UserModel user) async {
+    try {
+      final authProvider = context.read<AuthProvider>();
+      UserModel? currentUser = await authProvider.getCurrentUser();
+
+      if (currentUser == null) {
+        throw Exception('Unable to retrieve current user data');
+      }
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.id)
+          .update({
+        'likedUsers': FieldValue.arrayRemove([user.id])
+      });
+
+      setState(() {
+        likedUsers.remove(user);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${user.name} removed from liked users')),
+      );
+    } catch (e) {
+      print('Error removing liked user: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error removing liked user: ${e.toString()}')),
+      );
+    }
   }
 }
