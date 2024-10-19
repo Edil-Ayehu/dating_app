@@ -266,12 +266,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                     CardSwiperDirection.right) {
                                   showLikeOverlay = true;
                                 }
-                                filteredUsers.removeAt(previousIndex);
                               });
 
                               if (direction == CardSwiperDirection.right) {
                                 await _saveLikedUser(swipedUser.id);
                               }
+
+                              setState(() {
+                                filteredUsers.removeAt(previousIndex);
+                              });
 
                               Future.delayed(Duration(milliseconds: 500), () {
                                 setState(() {
@@ -280,13 +283,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                 });
                               });
                             }
-                            return filteredUsers.length > 1;
+                            return filteredUsers.isNotEmpty;
                           },
-                          numberOfCardsDisplayed: 2,
+                          numberOfCardsDisplayed:
+                              filteredUsers.length >= 2 ? 2 : 1,
                           backCardOffset: Offset(0, 40),
                           padding: EdgeInsets.symmetric(
                               horizontal: 20, vertical: 20),
-                          isDisabled: filteredUsers.length <= 1,
+                          isDisabled: filteredUsers.isEmpty,
                         ),
                         if (showLikeOverlay)
                           Container(
@@ -320,148 +324,144 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSearchAndFilterArea() {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
         children: [
-          TextField(
-            controller: searchController,
-            decoration: InputDecoration(
-              hintText: 'Search by name',
-              prefixIcon: Icon(Icons.search),
-              suffixIcon: searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: Icon(Icons.clear),
-                      onPressed: () {
-                        searchController.clear();
-                        _filterUsers();
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+          Expanded(
+            child: TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                hintText: 'Search by name',
+                prefixIcon: Icon(Icons.search),
+                suffixIcon: searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(Icons.clear),
+                        onPressed: () {
+                          searchController.clear();
+                          _filterUsers();
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                filled: true,
+                fillColor: Theme.of(context).cardColor,
               ),
             ),
           ),
-          SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              ElevatedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => StatefulBuilder(
-                      builder: (context, setState) {
-                        return AlertDialog(
-                          title: Text('Filter'),
-                          content: SingleChildScrollView(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                DropdownButton<String>(
-                                  value: selectedGender.isEmpty
-                                      ? null
-                                      : selectedGender,
-                                  hint: Text('Select Gender'),
-                                  items: ['Male', 'Female']
-                                      .map((gender) => DropdownMenuItem(
-                                            value: gender,
-                                            child: Text(gender),
-                                          ))
-                                      .toList(),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      selectedGender = value ?? '';
-                                    });
-                                  },
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                    'Age Range: ${ageRange.start.round()} - ${ageRange.end.round()}'),
-                                RangeSlider(
-                                  values: ageRange,
-                                  min: 18,
-                                  max: 100,
-                                  divisions: 82,
-                                  onChanged: (RangeValues values) {
-                                    setState(() {
-                                      ageRange = values;
-                                    });
-                                  },
-                                ),
-                                SizedBox(height: 8),
-                                Text('Interests'),
-                                MultiSelectDialogField(
-                                  items: interests
-                                      .map((e) => MultiSelectItem(e, e))
-                                      .toList(),
-                                  listType: MultiSelectListType.CHIP,
-                                  onConfirm: (values) {
-                                    setState(() {
-                                      selectedInterests = values.cast<String>();
-                                    });
-                                  },
-                                  chipDisplay: MultiSelectChipDisplay(
-                                    onTap: (value) {
-                                      setState(() {
-                                        selectedInterests.remove(value);
-                                      });
-                                    },
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                Text('Cities'),
-                                MultiSelectDialogField(
-                                  items: cities
-                                      .map((e) => MultiSelectItem(e, e))
-                                      .toList(),
-                                  listType: MultiSelectListType.CHIP,
-                                  onConfirm: (values) {
-                                    setState(() {
-                                      selectedCities = values.cast<String>();
-                                    });
-                                  },
-                                  chipDisplay: MultiSelectChipDisplay(
-                                    onTap: (value) {
-                                      setState(() {
-                                        selectedCities.remove(value);
-                                      });
-                                    },
-                                  ),
-                                ),
-                                SizedBox(height: 16),
-                              ],
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: Text('Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                _filterUsers();
-                              },
-                              child: Text('Apply'),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  );
-                },
-                child: Text('Filter'),
-              ),
-              ElevatedButton(
-                onPressed: _resetFilters,
-                child: Text('Reset Filters'),
-              ),
-            ],
+          SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: _showFilterDialog,
+            child: Icon(Icons.filter_list),
+            style: ElevatedButton.styleFrom(
+              shape: CircleBorder(),
+              padding: EdgeInsets.all(16),
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text('Filter'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButton<String>(
+                    value: selectedGender.isEmpty ? null : selectedGender,
+                    hint: Text('Select Gender'),
+                    isExpanded: true,
+                    items: ['Male', 'Female']
+                        .map((gender) => DropdownMenuItem(
+                              value: gender,
+                              child: Text(gender),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedGender = value ?? '';
+                      });
+                    },
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                      'Age Range: ${ageRange.start.round()} - ${ageRange.end.round()}'),
+                  RangeSlider(
+                    values: ageRange,
+                    min: 18,
+                    max: 100,
+                    divisions: 82,
+                    onChanged: (RangeValues values) {
+                      setState(() {
+                        ageRange = values;
+                      });
+                    },
+                  ),
+                  SizedBox(height: 16),
+                  Text('Interests'),
+                  MultiSelectDialogField(
+                    items: interests.map((e) => MultiSelectItem(e, e)).toList(),
+                    listType: MultiSelectListType.CHIP,
+                    onConfirm: (values) {
+                      setState(() {
+                        selectedInterests = values.cast<String>();
+                      });
+                    },
+                    chipDisplay: MultiSelectChipDisplay(
+                      onTap: (value) {
+                        setState(() {
+                          selectedInterests.remove(value);
+                        });
+                      },
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text('Cities'),
+                  MultiSelectDialogField(
+                    items: cities.map((e) => MultiSelectItem(e, e)).toList(),
+                    listType: MultiSelectListType.CHIP,
+                    onConfirm: (values) {
+                      setState(() {
+                        selectedCities = values.cast<String>();
+                      });
+                    },
+                    chipDisplay: MultiSelectChipDisplay(
+                      onTap: (value) {
+                        setState(() {
+                          selectedCities.remove(value);
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  _resetFilters();
+                  Navigator.of(context).pop();
+                },
+                child: Text('Reset'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  _filterUsers();
+                  Navigator.of(context).pop();
+                },
+                child: Text('Apply'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
