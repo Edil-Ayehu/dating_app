@@ -375,44 +375,76 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
-          return AlertDialog(
-            title: Text('Filter'),
-            content: SingleChildScrollView(
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Container(
+              padding: EdgeInsets.all(25),
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: Color(0xffD2E0FB).withOpacity(0.03)),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  DropdownButton<String>(
-                    value: selectedGender.isEmpty ? null : selectedGender,
-                    hint: Text('Select Gender'),
-                    isExpanded: true,
-                    items: ['Male', 'Female']
-                        .map((gender) => DropdownMenuItem(
-                              value: gender,
-                              child: Text(gender),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedGender = value ?? '';
-                      });
-                    },
-                  ),
-                  SizedBox(height: 16),
                   Text(
-                      'Age Range: ${ageRange.start.round()} - ${ageRange.end.round()}'),
+                    'Filter Your Matches',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  SizedBox(height: 20),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedGender.isEmpty ? null : selectedGender,
+                        hint: Text('Select Gender'),
+                        isExpanded: true,
+                        items: ['Male', 'Female']
+                            .map((gender) => DropdownMenuItem(
+                                  value: gender,
+                                  child: Text(gender),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedGender = value ?? '';
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Age Range: ${ageRange.start.round()} - ${ageRange.end.round()}',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                   RangeSlider(
                     values: ageRange,
                     min: 18,
                     max: 100,
                     divisions: 82,
+                    activeColor: Colors.purple,
+                    inactiveColor: Colors.purple.withOpacity(0.2),
+                    labels: RangeLabels(
+                      ageRange.start.round().toString(),
+                      ageRange.end.round().toString(),
+                    ),
                     onChanged: (RangeValues values) {
                       setState(() {
                         ageRange = values;
                       });
                     },
                   ),
-                  SizedBox(height: 16),
-                  Text('Interests'),
+                  SizedBox(height: 20),
+                  Text(
+                    'Interests',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                   MultiSelectDialogField(
                     items: interests.map((e) => MultiSelectItem(e, e)).toList(),
                     listType: MultiSelectListType.CHIP,
@@ -427,10 +459,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           selectedInterests.remove(value);
                         });
                       },
+                      chipColor: Colors.purple.shade100,
+                      textStyle: TextStyle(color: Colors.purple.shade800),
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  SizedBox(height: 16),
-                  Text('Cities'),
+                  SizedBox(height: 20),
+                  Text(
+                    'Cities',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                   MultiSelectDialogField(
                     items: cities.map((e) => MultiSelectItem(e, e)).toList(),
                     listType: MultiSelectListType.CHIP,
@@ -445,27 +486,64 @@ class _HomeScreenState extends State<HomeScreen> {
                           selectedCities.remove(value);
                         });
                       },
+                      chipColor: Colors.blue.shade100,
+                      textStyle: TextStyle(color: Colors.blue.shade800),
                     ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            _resetFilters();
+                            Navigator.of(context).pop();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: Text('Reset',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium!
+                                  .copyWith(
+                                    color: Colors.white,
+                                  )),
+                        ),
+                      ),
+                      Gap(10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            _filterUsers();
+                            Navigator.of(context).pop();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: Text('Apply',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium!
+                                  .copyWith()),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  _resetFilters();
-                  Navigator.of(context).pop();
-                },
-                child: Text('Reset'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  _filterUsers();
-                  Navigator.of(context).pop();
-                },
-                child: Text('Apply'),
-              ),
-            ],
           );
         },
       ),
