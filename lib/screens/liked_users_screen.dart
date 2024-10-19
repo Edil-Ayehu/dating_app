@@ -61,7 +61,8 @@ class _LikedUsersScreenState extends State<LikedUsersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Liked Users', style: TextStyle(color: Colors.black)),
+        title:
+            Text('Liked Users', style: Theme.of(context).textTheme.titleMedium),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.black),

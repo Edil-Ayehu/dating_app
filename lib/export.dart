@@ -29,3 +29,8 @@ export 'package:fancy_shimmer_image/fancy_shimmer_image.dart';
 export 'package:flutter_card_swiper/flutter_card_swiper.dart';
 export 'package:cached_network_image/cached_network_image.dart';
 export 'package:dating_app/home.dart';
+export 'package:dating_app/providers/home_provider.dart';
+export 'package:dating_app/screens/chat/chat_screen.dart';
+export 'package:dating_app/screens/liked_users_screen.dart';
+export 'package:dating_app/screens/profile/profile_screen.dart';
+export 'package:curved_navigation_bar/curved_navigation_bar.dart';

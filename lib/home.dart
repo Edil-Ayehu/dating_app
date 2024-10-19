@@ -1,15 +1,11 @@
 import 'package:dating_app/export.dart';
-import 'package:dating_app/providers/home_provider.dart';
-import 'package:dating_app/screens/chat/chat_screen.dart';
-import 'package:dating_app/screens/profile/profile_screen.dart';
-import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 
 class Home extends StatelessWidget {
   Home({super.key});
 
   final List<Widget> pages = [
     HomeScreen(),
-    MatchesScreen(),
+    LikedUsersScreen(),
     ChatScreen(),
     ProfileScreen(),
   ];

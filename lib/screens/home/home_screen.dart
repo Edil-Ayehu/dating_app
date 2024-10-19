@@ -212,15 +212,6 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.favorite),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => LikedUsersScreen()),
-              );
-            },
-          ),
-          IconButton(
             icon: Icon(Provider.of<ThemeProvider>(context).darkMode
                 ? Icons.light_mode
                 : Icons.dark_mode),
