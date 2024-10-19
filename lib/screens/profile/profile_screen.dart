@@ -29,35 +29,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadUserData();
   }
 
-  Future<void> _loadUserData() async {
-    setState(() {
-      _isLoading = true;
-    });
-    try {
-      final authProvider = context.read<AuthProvider>();
-      _user = await authProvider.getCurrentUser();
-      if (_user != null) {
-        _nameController = TextEditingController(text: _user!.name);
-        _ageController = TextEditingController(text: _user!.age.toString());
-        _bioController = TextEditingController(text: _user!.bio);
-        _aboutController = TextEditingController(text: _user!.about);
-        _gender = _user!.gender;
-        _interestedIn = _user!.interestedIn;
-        _interests = _user!.interests;
-      } else {
-        throw Exception('User data is null');
-      }
-    } catch (e) {
-      print('Error loading user data: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading user data: ${e.toString()}')),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+Future<void> _loadUserData() async {
+  if (!mounted) return;
+  setState(() {
+    _isLoading = true;
+  });
+  try {
+    final authProvider = context.read<AuthProvider>();
+    _user = await authProvider.getCurrentUser();
+    if (_user != null) {
+      _nameController = TextEditingController(text: _user!.name);
+      _ageController = TextEditingController(text: _user!.age.toString());
+      _bioController = TextEditingController(text: _user!.bio);
+      _aboutController = TextEditingController(text: _user!.about);
+      _gender = _user!.gender;
+      _interestedIn = _user!.interestedIn;
+      _interests = _user!.interests;
+    } else {
+      throw Exception('User data is null');
     }
+  } catch (e) {
+    print('Error loading user data: $e');
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error loading user data: ${e.toString()}')),
+    );
+  } finally {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = false;
+    });
   }
+}
 
   void _removeInterest(String interest) {
     setState(() {
@@ -154,35 +157,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-void _navigateToEditProfile() {
-  Navigator.of(context)
-      .push(
-    MaterialPageRoute(
-      builder: (context) => EditProfileScreen(user: _user!),
-    ),
-  )
-      .then((updatedUser) {
-    if (updatedUser != null) {
-      setState(() {
-        _user = updatedUser;
-        _interests = updatedUser.interests;
-      });
-    }
-  });
-}
+  void _navigateToEditProfile() {
+    Navigator.of(context)
+        .push(
+      MaterialPageRoute(
+        builder: (context) => EditProfileScreen(user: _user!),
+      ),
+    )
+        .then((updatedUser) {
+      if (updatedUser != null) {
+        setState(() {
+          _user = updatedUser;
+          _interests = updatedUser.interests;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Profile',
-          style: GoogleFonts.eagleLake(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white
-                : Colors.black,
-          ),
-        ),
+        title: Text('Profile', style: Theme.of(context).textTheme.titleMedium),
         actions: [
           IconButton(
             icon: Icon(Icons.edit),
@@ -319,20 +315,21 @@ void _navigateToEditProfile() {
     );
   }
 
-Widget _buildInterestsSection() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Wrap(
-        spacing: 8,
-        children: _interests
-            .map((interest) => Chip(
-                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                  label: Text(interest),
-                ))
-            .toList(),
-      ),
-    ],
-  );
-}
+  Widget _buildInterestsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          children: _interests
+              .map((interest) => Chip(
+                    backgroundColor:
+                        Theme.of(context).primaryColor.withOpacity(0.1),
+                    label: Text(interest),
+                  ))
+              .toList(),
+        ),
+      ],
+    );
+  }
 }

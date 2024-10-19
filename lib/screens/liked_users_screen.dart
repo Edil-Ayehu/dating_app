@@ -15,47 +15,59 @@ class _LikedUsersScreenState extends State<LikedUsersScreen> {
   @override
   void initState() {
     super.initState();
-    _loadLikedUsers();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadLikedUsers();
+    });
   }
 
-  Future<void> _loadLikedUsers() async {
-    try {
-      final authProvider = context.read<AuthProvider>();
-      UserModel? currentUser = await authProvider.getCurrentUser();
+  Future<void> _refreshLikedUsers() async {
+    setState(() {
+      isLoading = true;
+    });
+    await _loadLikedUsers();
+  }
 
-      if (currentUser == null) {
-        throw Exception('Unable to retrieve current user data');
-      }
+Future<void> _loadLikedUsers() async {
+  if (!mounted) return;
+  try {
+    final authProvider = context.read<AuthProvider>();
+    UserModel? currentUser = await authProvider.getCurrentUser();
 
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.id)
-          .get();
-
-      final likedUserIds =
-          List<String>.from(userDoc.data()?['likedUsers'] ?? []);
-
-      final likedUsersData = await Future.wait(
-        likedUserIds.map((userId) =>
-            FirebaseFirestore.instance.collection('users').doc(userId).get()),
-      );
-
-      setState(() {
-        likedUsers = likedUsersData
-            .map((doc) => UserModel.fromMap(doc.data() as Map<String, dynamic>))
-            .toList();
-        isLoading = false;
-      });
-    } catch (e) {
-      print('Error loading liked users: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading liked users: ${e.toString()}')),
-      );
-      setState(() {
-        isLoading = false;
-      });
+    if (currentUser == null) {
+      throw Exception('Unable to retrieve current user data');
     }
+
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.id)
+        .get();
+
+    final likedUserIds =
+        List<String>.from(userDoc.data()?['likedUsers'] ?? []);
+
+    final likedUsersData = await Future.wait(
+      likedUserIds.map((userId) =>
+          FirebaseFirestore.instance.collection('users').doc(userId).get()),
+    );
+
+    if (!mounted) return;
+    setState(() {
+      likedUsers = likedUsersData
+          .map((doc) => UserModel.fromMap(doc.data() as Map<String, dynamic>))
+          .toList();
+      isLoading = false;
+    });
+  } catch (e) {
+    print('Error loading liked users: $e');
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error loading liked users: ${e.toString()}')),
+    );
+    setState(() {
+      isLoading = false;
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -67,16 +79,19 @@ class _LikedUsersScreenState extends State<LikedUsersScreen> {
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.black),
       ),
-      body: isLoading
-          ? Center(
-              child: LoadingAnimationWidget.staggeredDotsWave(
-                color: Theme.of(context).primaryColor,
-                size: 50,
-              ),
-            )
-          : likedUsers.isEmpty
-              ? _buildEmptyState()
-              : _buildLikedUsersGrid(),
+      body: RefreshIndicator(
+        onRefresh: _refreshLikedUsers,
+        child: isLoading
+            ? Center(
+                child: LoadingAnimationWidget.staggeredDotsWave(
+                  color: Theme.of(context).primaryColor,
+                  size: 50,
+                ),
+              )
+            : likedUsers.isEmpty
+                ? _buildEmptyState()
+                : _buildLikedUsersGrid(),
+      ),
     );
   }
 

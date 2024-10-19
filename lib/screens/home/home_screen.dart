@@ -23,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool showLikeOverlay = false;
   bool showDislikeOverlay = false;
+  bool isLoading = true;
 
   List<String> cities = [
     'Addis Ababa',
@@ -128,37 +129,38 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadUsers() async {
+    if (!mounted) return;
     try {
       final authProvider = context.read<AuthProvider>();
-      UserModel? currentUser;
-
-      // Try to get the current user multiple times with a delay
-      for (int i = 0; i < 3; i++) {
-        currentUser = await authProvider.getCurrentUser();
-        if (currentUser != null) break;
-        await Future.delayed(Duration(seconds: 1));
-      }
+      UserModel? currentUser = await authProvider.getCurrentUser();
 
       if (currentUser == null) {
         throw Exception('Unable to retrieve current user data');
       }
 
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('id', isNotEqualTo: currentUser.id)
-          .get();
+      QuerySnapshot querySnapshot =
+          await FirebaseFirestore.instance.collection('users').get();
 
+      List<UserModel> loadedUsers = querySnapshot.docs
+          .map((doc) => UserModel.fromMap(doc.data() as Map<String, dynamic>))
+          .where((user) => user.id != currentUser.id)
+          .toList();
+
+      if (!mounted) return;
       setState(() {
-        users = querySnapshot.docs
-            .map((doc) => UserModel.fromMap(doc.data() as Map<String, dynamic>))
-            .toList();
+        users = loadedUsers;
         filteredUsers = List.from(users);
+        isLoading = false;
       });
     } catch (e) {
       print('Error loading users: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error loading users: ${e.toString()}')),
       );
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -231,91 +233,98 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildSearchAndFilterArea(),
-          Expanded(
-            child: filteredUsers.isNotEmpty
-                ? SizedBox(
-                    width: double.infinity,
-                    child: Stack(
-                      children: [
-                        if (filteredUsers.length > 1)
-                          CardSwiper(
-                            cardsCount: filteredUsers.length,
-                            cardBuilder: (context, index, percentThresholdX,
-                                    percentThresholdY) =>
-                                buildUserCard(filteredUsers[index]),
-                            onSwipe:
-                                (previousIndex, currentIndex, direction) async {
-                              if (previousIndex < filteredUsers.length) {
-                                UserModel swipedUser =
-                                    filteredUsers[previousIndex];
-                                setState(() {
-                                  if (direction == CardSwiperDirection.left) {
-                                    showDislikeOverlay = true;
-                                  } else if (direction ==
-                                      CardSwiperDirection.right) {
-                                    showLikeOverlay = true;
-                                  }
-                                });
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                _buildSearchAndFilterArea(),
+                Expanded(
+                  child: filteredUsers.isNotEmpty
+                      ? SizedBox(
+                          width: double.infinity,
+                          child: Stack(
+                            children: [
+                              if (filteredUsers.length > 1)
+                                CardSwiper(
+                                  cardsCount: filteredUsers.length,
+                                  cardBuilder: (context,
+                                          index,
+                                          percentThresholdX,
+                                          percentThresholdY) =>
+                                      buildUserCard(filteredUsers[index]),
+                                  onSwipe: (previousIndex, currentIndex,
+                                      direction) async {
+                                    if (previousIndex < filteredUsers.length) {
+                                      UserModel swipedUser =
+                                          filteredUsers[previousIndex];
+                                      setState(() {
+                                        if (direction ==
+                                            CardSwiperDirection.left) {
+                                          showDislikeOverlay = true;
+                                        } else if (direction ==
+                                            CardSwiperDirection.right) {
+                                          showLikeOverlay = true;
+                                        }
+                                      });
 
-                                if (direction == CardSwiperDirection.right) {
-                                  await _saveLikedUser(swipedUser.id);
-                                }
+                                      if (direction ==
+                                          CardSwiperDirection.right) {
+                                        await _saveLikedUser(swipedUser.id);
+                                      }
 
-                                setState(() {
-                                  filteredUsers.removeAt(previousIndex);
-                                  users.remove(swipedUser);
-                                });
+                                      setState(() {
+                                        filteredUsers.removeAt(previousIndex);
+                                        users.remove(swipedUser);
+                                      });
 
-                                Future.delayed(Duration(milliseconds: 500), () {
-                                  setState(() {
-                                    showLikeOverlay = false;
-                                    showDislikeOverlay = false;
-                                  });
-                                });
-                              }
-                              return filteredUsers.length > 1;
-                            },
-                            numberOfCardsDisplayed: 1,
-                            backCardOffset: Offset(0, 40),
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 20),
-                            isDisabled: filteredUsers.length <= 1,
-                          )
-                        else if (filteredUsers.length == 1)
-                          Center(
-                            child: buildUserCard(filteredUsers[0]),
+                                      Future.delayed(
+                                          Duration(milliseconds: 500), () {
+                                        setState(() {
+                                          showLikeOverlay = false;
+                                          showDislikeOverlay = false;
+                                        });
+                                      });
+                                    }
+                                    return filteredUsers.length > 1;
+                                  },
+                                  numberOfCardsDisplayed: 1,
+                                  backCardOffset: Offset(0, 40),
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 20),
+                                  isDisabled: filteredUsers.length <= 1,
+                                )
+                              else if (filteredUsers.length == 1)
+                                Center(
+                                  child: buildUserCard(filteredUsers[0]),
+                                ),
+                              if (showLikeOverlay)
+                                Container(
+                                  color: Colors.green.withOpacity(0.5),
+                                  child: Center(
+                                    child: Icon(Icons.favorite,
+                                        size: 100, color: Colors.white),
+                                  ),
+                                ),
+                              if (showDislikeOverlay)
+                                Container(
+                                  color: Colors.red.withOpacity(0.5),
+                                  child: Center(
+                                    child: Icon(Icons.close,
+                                        size: 100, color: Colors.white),
+                                  ),
+                                ),
+                            ],
                           ),
-                        if (showLikeOverlay)
-                          Container(
-                            color: Colors.green.withOpacity(0.5),
-                            child: Center(
-                              child: Icon(Icons.favorite,
-                                  size: 100, color: Colors.white),
-                            ),
+                        )
+                      : Center(
+                          child: Text(
+                            'No profiles match your criteria',
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
-                        if (showDislikeOverlay)
-                          Container(
-                            color: Colors.red.withOpacity(0.5),
-                            child: Center(
-                              child: Icon(Icons.close,
-                                  size: 100, color: Colors.white),
-                            ),
-                          ),
-                      ],
-                    ),
-                  )
-                : Center(
-                    child: Text(
-                      'No profiles match your criteria',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-          )
-        ],
-      ),
+                        ),
+                )
+              ],
+            ),
     );
   }
 

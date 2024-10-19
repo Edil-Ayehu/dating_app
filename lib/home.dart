@@ -1,14 +1,16 @@
 import 'package:dating_app/export.dart';
 
 class Home extends StatelessWidget {
-  Home({super.key});
+  const Home({super.key});
 
-  final List<Widget> pages = [
-    HomeScreen(),
-    LikedUsersScreen(),
-    ChatScreen(),
-    ProfileScreen(),
-  ];
+  List<Widget> _pages() {
+    return [
+      HomeScreen(),
+      LikedUsersScreen(key: UniqueKey()),
+      ChatScreen(),
+      ProfileScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +20,7 @@ class Home extends StatelessWidget {
     return Scaffold(
       body: IndexedStack(
         index: homeProvider.currentPage,
-        children: pages,
+        children: _pages(),
       ),
       bottomNavigationBar: CurvedNavigationBar(
         index: homeProvider.currentPage,
