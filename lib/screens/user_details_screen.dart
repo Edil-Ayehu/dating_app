@@ -1,4 +1,5 @@
 import 'package:dating_app/export.dart';
+import 'package:dating_app/screens/chat/chat_detail_screen.dart';
 
 class UserDetailsScreen extends StatefulWidget {
   final UserModel user;
@@ -29,6 +30,18 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 ),
               ),
             ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: IconButton(
+                    icon: Icon(Icons.chat, color: Colors.black),
+                    onPressed: () => _startChat(context),
+                  ),
+                ),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: EdgeInsets.zero,
               background: _buildMainImage(),
@@ -317,6 +330,43 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                   .toList(),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _startChat(BuildContext context) async {
+    final authProvider = context.read<AuthProvider>();
+    final currentUser = await authProvider.getCurrentUser();
+
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to start chat. Please try again.')),
+      );
+      return;
+    }
+
+    List<String> userIds = [currentUser.id, widget.user.id];
+    userIds.sort();
+    final chatId = userIds.join('_');
+
+    final chatDoc =
+        await FirebaseFirestore.instance.collection('chats').doc(chatId).get();
+
+    if (!chatDoc.exists) {
+      await FirebaseFirestore.instance.collection('chats').doc(chatId).set({
+        'participants': [currentUser.id, widget.user.id],
+        'lastMessage': null,
+        'lastMessageTimestamp': FieldValue.serverTimestamp(),
+      });
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatDetailScreen(
+          chatId: chatId,
+          otherUser: widget.user,
         ),
       ),
     );
