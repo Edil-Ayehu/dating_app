@@ -120,25 +120,27 @@ Future<void> initializeCurrentUser() async {
 }
 
 // method to get nearby users
-Future<List<UserModel>> getNearbyUsers(GeoPoint userLocation, double radius) async {
+Future<List<UserModel>> getNearbyUsers(UserModel currentUser, double radius, {int? limit}) async {
   try {
     final users = await FirebaseFirestore.instance
         .collection('users')
         .where('location', isNotEqualTo: null)
+        .where('gender', isEqualTo: currentUser.gender == 'Male' ? 'Female' : 'Male')
         .get();
 
     List<UserModel> nearbyUsers = [];
     for (var doc in users.docs) {
       final user = UserModel.fromMap(doc.data());
-      if (user.id != _user!.uid && user.location != null) {
+      if (user.id != currentUser.id && user.location != null) {
         double distance = Geolocator.distanceBetween(
-          userLocation.latitude,
-          userLocation.longitude,
+          currentUser.location!.latitude,
+          currentUser.location!.longitude,
           user.location!.latitude,
           user.location!.longitude,
         );
         if (distance <= radius) {
           nearbyUsers.add(user);
+          if (limit != null && nearbyUsers.length >= limit) break;
         }
       }
     }

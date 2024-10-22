@@ -1,4 +1,5 @@
 import 'package:dating_app/export.dart';
+import 'package:dating_app/screens/all_nearby_users_screen.dart';
 import 'package:dating_app/screens/chat/chat_detail_screen.dart';
 import 'package:intl/intl.dart';
 
@@ -30,8 +31,8 @@ class _ChatScreenState extends State<ChatScreen> {
           .where('participants', arrayContains: _currentUser!.id)
           .snapshots();
 
-      _nearbyUsers = await authProvider.getNearbyUsers(
-          _currentUser!.location!, 10000); // 10km radius
+      _nearbyUsers = await authProvider.getNearbyUsers(_currentUser!, 10000,
+          limit: 5); // 10km radius, limit to 5 users
     }
     setState(() {
       _isLoading = false;
@@ -59,40 +60,61 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildNearbyUsersList() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Nearby Users'),
-        SizedBox(
-          height: 100,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _nearbyUsers.length,
-            itemBuilder: (context, index) {
-              final user = _nearbyUsers[index];
-              return Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: GestureDetector(
-                  onTap: () => _startChat(user),
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundImage: user.photoUrls.isNotEmpty
-                            ? NetworkImage(user.photoUrls[0])
-                            : AssetImage('assets/images/6.jpg')
-                                as ImageProvider,
-                      ),
-                      SizedBox(height: 4),
-                      Text(user.name, style: TextStyle(fontSize: 12)),
-                    ],
-                  ),
-                ),
-              );
-            },
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Nearby',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              TextButton(
+                onPressed: () {
+                   Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AllNearbyUsersScreen(currentUser: _currentUser!),
+      ),
+    );
+                },
+                child: Text('See All',
+                    style: TextStyle(fontSize: 18, color: Colors.black)),
+              ),
+            ],
           ),
-        ),
-      ],
+          SizedBox(
+            height: 100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _nearbyUsers.length,
+              itemBuilder: (context, index) {
+                final user = _nearbyUsers[index];
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: GestureDetector(
+                    onTap: () => _startChat(user),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundImage: user.photoUrls.isNotEmpty
+                              ? NetworkImage(user.photoUrls[0])
+                              : AssetImage('assets/images/6.jpg')
+                                  as ImageProvider,
+                        ),
+                        SizedBox(height: 4),
+                        Text(user.name, style: TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
