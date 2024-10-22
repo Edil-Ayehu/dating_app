@@ -1,4 +1,5 @@
 import 'package:dating_app/export.dart';
+import 'package:dating_app/screens/all_best_matches_screen.dart';
 import 'package:dating_app/screens/all_nearby_users_screen.dart';
 import 'package:dating_app/screens/chat/chat_detail_screen.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +12,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  List<UserModel> _bestMatches = [];
   Stream<QuerySnapshot>? _chatsStream;
   UserModel? _currentUser;
   List<UserModel> _nearbyUsers = [];
@@ -33,6 +35,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       _nearbyUsers = await authProvider.getNearbyUsers(_currentUser!, 10000,
           limit: 5); // 10km radius, limit to 5 users
+      await _loadBestMatches();
     }
     setState(() {
       _isLoading = false;
@@ -51,8 +54,18 @@ class _ChatScreenState extends State<ChatScreen> {
           : _currentUser == null
               ? Center(child: Text('Unable to load user data'))
               : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildNearbyUsersList(),
+                    SizedBox(height: 20),
+                    _buildBestMatchesList(),
+                    SizedBox(height: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                      child: Text('Recent Chats',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold)),
+                    ),
                     Expanded(child: _buildChatsList()),
                   ],
                 ),
@@ -114,6 +127,109 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBestMatchesList() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Best Matches',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          AllBestMatchesScreen(currentUser: _currentUser!),
+                    ),
+                  );
+                },
+                child: Text('See All',
+                    style: TextStyle(fontSize: 18, color: Colors.black)),
+              ),
+            ],
+          ),
+          // SizedBox(height: 10),
+          SizedBox(
+            height: 150,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _bestMatches.length,
+              itemBuilder: (context, index) {
+                final user = _bestMatches[index];
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: GestureDetector(
+                    onTap: () => _startChat(user),
+                    child: Column(
+                      children: [
+                        Stack(
+                          children: [
+                            Container(
+                              width: 150,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                image: DecorationImage(
+                                  image: user.photoUrls.isNotEmpty
+                                      ? NetworkImage(user.photoUrls[0])
+                                      : AssetImage('assets/images/6.jpg')
+                                          as ImageProvider,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              left: 10,
+                              child: Container(
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.only(
+                                    bottomLeft: Radius.circular(10),
+                                    bottomRight: Radius.circular(10),
+                                  ),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.black.withOpacity(0.8)
+                                    ],
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    user.name,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          )
         ],
       ),
     );
@@ -276,5 +392,11 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _loadBestMatches() async {
+    final authProvider = context.read<AuthProvider>();
+    _bestMatches = await authProvider.getBestMatches(_currentUser!);
+    setState(() {});
   }
 }

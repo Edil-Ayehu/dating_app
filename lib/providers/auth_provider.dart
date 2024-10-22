@@ -150,4 +150,29 @@ Future<List<UserModel>> getNearbyUsers(UserModel currentUser, double radius, {in
     return [];
   }
 }
+
+Future<List<UserModel>> getBestMatches(UserModel currentUser, {int limit = 5}) async {
+  try {
+    final users = await FirebaseFirestore.instance
+        .collection('users')
+        .where('gender', isEqualTo: currentUser.gender == 'Male' ? 'Female' : 'Male')
+        .get();
+
+    List<UserModel> allUsers = users.docs
+        .map((doc) => UserModel.fromMap(doc.data()))
+        .where((user) => user.id != currentUser.id)
+        .toList();
+
+    allUsers.sort((a, b) {
+      int aMatches = a.interests.where((interest) => currentUser.interests.contains(interest)).length;
+      int bMatches = b.interests.where((interest) => currentUser.interests.contains(interest)).length;
+      return bMatches.compareTo(aMatches);
+    });
+
+    return allUsers.take(limit).toList();
+  } catch (e) {
+    print('Error getting best matches: $e');
+    return [];
+  }
+}
 }
