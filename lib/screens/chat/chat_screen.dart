@@ -12,6 +12,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   Stream<QuerySnapshot>? _chatsStream;
   UserModel? _currentUser;
+  List<UserModel> _nearbyUsers = [];
   bool _isLoading = true;
 
   @override
@@ -20,95 +21,195 @@ class _ChatScreenState extends State<ChatScreen> {
     _loadCurrentUser();
   }
 
-Future<void> _loadCurrentUser() async {
-  final authProvider = context.read<AuthProvider>();
-  _currentUser = await authProvider.getCurrentUser();
-  if (_currentUser != null) {
-    _chatsStream = FirebaseFirestore.instance
-        .collection('chats')
-        .where('participants', arrayContains: _currentUser!.id)
-        .snapshots();
+  Future<void> _loadCurrentUser() async {
+    final authProvider = context.read<AuthProvider>();
+    _currentUser = await authProvider.getCurrentUser();
+    if (_currentUser != null && _currentUser!.location != null) {
+      _chatsStream = FirebaseFirestore.instance
+          .collection('chats')
+          .where('participants', arrayContains: _currentUser!.id)
+          .snapshots();
+
+      _nearbyUsers = await authProvider.getNearbyUsers(
+          _currentUser!.location!, 10000); // 10km radius
+    }
+    setState(() {
+      _isLoading = false;
+    });
   }
-  setState(() {
-    _isLoading = false;
-  });
-}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: Text('Chats'),
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : _currentUser == null
               ? Center(child: Text('Unable to load user data'))
-              : StreamBuilder<QuerySnapshot>(
-                  stream: _chatsStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    }
+              : Column(
+                  children: [
+                    _buildNearbyUsersList(),
+                    Expanded(child: _buildChatsList()),
+                  ],
+                ),
+    );
+  }
 
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return Center(child: Text('No chats yet'));
-                    }
+  Widget _buildNearbyUsersList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Nearby Users'),
+        SizedBox(
+          height: 100,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _nearbyUsers.length,
+            itemBuilder: (context, index) {
+              final user = _nearbyUsers[index];
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GestureDetector(
+                  onTap: () => _startChat(user),
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundImage: user.photoUrls.isNotEmpty
+                            ? NetworkImage(user.photoUrls[0])
+                            : AssetImage('assets/images/6.jpg')
+                                as ImageProvider,
+                      ),
+                      SizedBox(height: 4),
+                      Text(user.name, style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
 
-                    return ListView.builder(
-  itemCount: snapshot.data!.docs.length,
-  itemBuilder: (context, index) {
-    final chatDoc = snapshot.data!.docs[index];
-    final chatData = chatDoc.data() as Map<String, dynamic>;
-    final otherUserId = (chatData['participants'] as List<dynamic>)
-        .firstWhere((id) => id != _currentUser!.id);
-
-    return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance
-          .collection('users')
-          .doc(otherUserId)
-          .get(),
-      builder: (context, userSnapshot) {
-        if (!userSnapshot.hasData) {
-          return ListTile(title: Text('Loading...'));
+  Widget _buildChatsList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _chatsStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
         }
 
-        final otherUser = UserModel.fromMap(
-            userSnapshot.data!.data() as Map<String, dynamic>);
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(child: Text('No chats yet'));
+        }
 
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundImage: otherUser.photoUrls.isNotEmpty
-                ? NetworkImage(otherUser.photoUrls[0])
-                : AssetImage('assets/images/6.jpg') as ImageProvider,
-          ),
-          title: Text(otherUser.name),
-          subtitle: Text(chatData['lastMessage'] ?? 'No messages yet'),
-          trailing: chatData['lastMessageTimestamp'] != null
-              ? Text(
-                  DateFormat('MMM d, HH:mm').format(
-                    (chatData['lastMessageTimestamp'] as Timestamp).toDate(),
+        return ListView.builder(
+          itemCount: snapshot.data!.docs.length,
+          itemBuilder: (context, index) {
+            final chatDoc = snapshot.data!.docs[index];
+            final chatData = chatDoc.data() as Map<String, dynamic>;
+            final otherUserId = (chatData['participants'] as List<dynamic>)
+                .firstWhere((id) => id != _currentUser!.id);
+
+            return FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(otherUserId)
+                  .get(),
+              builder: (context, userSnapshot) {
+                if (!userSnapshot.hasData) {
+                  return ListTile(title: Text('Loading...'));
+                }
+
+                final otherUser = UserModel.fromMap(
+                    userSnapshot.data!.data() as Map<String, dynamic>);
+
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundImage: otherUser.photoUrls.isNotEmpty
+                        ? NetworkImage(otherUser.photoUrls[0])
+                        : AssetImage('assets/images/6.jpg') as ImageProvider,
                   ),
-                )
-              : null,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ChatDetailScreen(
-                  chatId: chatDoc.id,
-                  otherUser: otherUser,
-                ),
-              ),
+                  title: Text(otherUser.name),
+                  subtitle: Text(chatData['lastMessage'] ?? 'No messages yet'),
+                  trailing: chatData['lastMessageTimestamp'] != null
+                      ? Text(
+                          DateFormat('MMM d, HH:mm').format(
+                            (chatData['lastMessageTimestamp'] as Timestamp)
+                                .toDate(),
+                          ),
+                        )
+                      : null,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatDetailScreen(
+                          chatId: chatDoc.id,
+                          otherUser: otherUser,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
             );
           },
         );
       },
     );
-  },
-);
-                  },
-                ),
-    );
+  }
+
+  void _startChat(UserModel otherUser) async {
+    // Check if a chat already exists
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('chats')
+        .where('participants', arrayContains: _currentUser!.id)
+        .get();
+
+    String? existingChatId;
+    for (var doc in querySnapshot.docs) {
+      List<dynamic> participants = doc['participants'];
+      if (participants.contains(otherUser.id)) {
+        existingChatId = doc.id;
+        break;
+      }
+    }
+
+    if (existingChatId != null) {
+      // Chat already exists, navigate to it
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatDetailScreen(
+            chatId: existingChatId!,
+            otherUser: otherUser,
+          ),
+        ),
+      );
+    } else {
+      // Create a new chat
+      final newChatDoc =
+          await FirebaseFirestore.instance.collection('chats').add({
+        'participants': [_currentUser!.id, otherUser.id],
+        'lastMessage': null,
+        'lastMessageTimestamp': null,
+      });
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatDetailScreen(
+            chatId: newChatDoc.id,
+            otherUser: otherUser,
+          ),
+        ),
+      );
+    }
   }
 }

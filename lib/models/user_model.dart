@@ -1,3 +1,5 @@
+import 'package:dating_app/export.dart';
+
 class UserModel {
   final String id;
   final String name;
@@ -10,6 +12,8 @@ class UserModel {
   final List<String> photoUrls;
   final List<String> interests;
   final String city;
+    final GeoPoint? location;
+  final String? locationName;
 
   UserModel({
     required this.id,
@@ -23,6 +27,8 @@ class UserModel {
     required this.photoUrls,
     required this.interests,
     required this.city,
+    this.location,
+    this.locationName,
   });
 
   Map<String, dynamic> toMap() {
@@ -38,6 +44,8 @@ class UserModel {
       'photoUrls': photoUrls,
       'interests': interests,
       'city': city,
+      'location': location,
+      'locationName': locationName,
     };
   }
 
@@ -54,6 +62,8 @@ class UserModel {
       photoUrls: List<String>.from(map['photoUrls'] ?? []),
       interests: List<String>.from(map['interests'] ?? []),
       city: map['city'] ?? '',
+      location: map['location'],
+      locationName: map['locationName'],
     );
   }
 
@@ -69,6 +79,8 @@ class UserModel {
     List<String>? photoUrls,
     List<String>? interests,
     String? city,
+    GeoPoint? location,
+    String? locationName,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -82,6 +94,8 @@ class UserModel {
       photoUrls: photoUrls ?? this.photoUrls,
       interests: interests ?? this.interests,
       city: city ?? this.city,
+      location: location ?? this.location,
+      locationName: locationName ?? this.locationName,
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:dating_app/export.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geolocator/geolocator.dart';
 
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -115,6 +116,36 @@ Future<void> initializeCurrentUser() async {
       _currentUser = UserModel.fromMap(userDoc.data() as Map<String, dynamic>);
       notifyListeners();
     }
+  }
+}
+
+// method to get nearby users
+Future<List<UserModel>> getNearbyUsers(GeoPoint userLocation, double radius) async {
+  try {
+    final users = await FirebaseFirestore.instance
+        .collection('users')
+        .where('location', isNotEqualTo: null)
+        .get();
+
+    List<UserModel> nearbyUsers = [];
+    for (var doc in users.docs) {
+      final user = UserModel.fromMap(doc.data());
+      if (user.id != _user!.uid && user.location != null) {
+        double distance = Geolocator.distanceBetween(
+          userLocation.latitude,
+          userLocation.longitude,
+          user.location!.latitude,
+          user.location!.longitude,
+        );
+        if (distance <= radius) {
+          nearbyUsers.add(user);
+        }
+      }
+    }
+    return nearbyUsers;
+  } catch (e) {
+    print('Error getting nearby users: $e');
+    return [];
   }
 }
 }

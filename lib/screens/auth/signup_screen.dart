@@ -1,8 +1,10 @@
 import 'package:dating_app/export.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({Key? key}) : super(key: key);
+  const SignupScreen({super.key});
 
   @override
   _SignupScreenState createState() => _SignupScreenState();
@@ -35,55 +37,73 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  Future<void> _signUp() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-      try {
-        // Create user account
-        firebase_auth.UserCredential userCredential =
-            await context.read<AuthProvider>().signUp(
-                  _emailController.text.trim(),
-                  _passwordController.text.trim(),
-                );
-
-        // Create user profile
-        UserModel newUser = UserModel(
-          id: userCredential.user!.uid,
-          name: _nameController.text.trim(),
-          email: _emailController.text.trim(),
-          age: int.parse(_ageController.text.trim()),
-          bio: _bioController.text.trim(),
-          gender: _gender,
-          interestedIn: _interestedIn,
-          photoUrls: [],
-          interests: [],
-          about: _aboutController.text,
-          city: _cityController.text,
+Future<void> _signUp() async {
+  if (_formKey.currentState!.validate()) {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      // Get user's location
+      Position? position = await _getCurrentLocation();
+      String? locationName;
+      
+      if (position != null) {
+        List<Placemark> placemarks = await placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
         );
-
-        // Store user profile in Firestore
-        await context.read<AuthProvider>().createUserProfile(newUser);
-
-        // Navigate to home screen
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => Home()),
-          (route) => false,
-        );
-      } catch (e) {
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
-        print('Error during sign up: $e');
-      } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        if (placemarks.isNotEmpty) {
+          locationName = '${placemarks[0].locality}, ${placemarks[0].country}';
+        }
       }
+
+      // Create user account
+      firebase_auth.UserCredential userCredential =
+          await context.read<AuthProvider>().signUp(
+                _emailController.text.trim(),
+                _passwordController.text.trim(),
+              );
+
+      // Create user profile
+      UserModel newUser = UserModel(
+        id: userCredential.user!.uid,
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        age: int.parse(_ageController.text.trim()),
+        bio: _bioController.text.trim(),
+        gender: _gender,
+        interestedIn: _interestedIn,
+        photoUrls: [],
+        interests: [],
+        about: _aboutController.text,
+        city: _cityController.text,
+        location: position != null
+            ? GeoPoint(position.latitude, position.longitude)
+            : null,
+        locationName: locationName,
+      );
+
+      // Store user profile in Firestore
+      await context.read<AuthProvider>().createUserProfile(newUser);
+
+      // Navigate to home screen
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => Home()),
+        (route) => false,
+      );
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+      print('Error during sign up: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -255,5 +275,38 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       ),
     );
+  }
+
+  Future<Position?> _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Location services are disabled.')),
+      );
+      return null;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Location permissions are denied.')),
+        );
+        return null;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Location permissions are permanently denied.')),
+      );
+      return null;
+    }
+
+    return await Geolocator.getCurrentPosition();
   }
 }

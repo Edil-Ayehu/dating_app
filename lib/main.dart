@@ -1,5 +1,4 @@
 import 'package:dating_app/export.dart';
-import 'package:dating_app/providers/home_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
