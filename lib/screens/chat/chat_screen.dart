@@ -72,12 +72,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               TextButton(
                 onPressed: () {
-                   Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AllNearbyUsersScreen(currentUser: _currentUser!),
-      ),
-    );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          AllNearbyUsersScreen(currentUser: _currentUser!),
+                    ),
+                  );
                 },
                 child: Text('See All',
                     style: TextStyle(fontSize: 18, color: Colors.black)),
@@ -138,6 +139,27 @@ class _ChatScreenState extends State<ChatScreen> {
             final otherUserId = (chatData['participants'] as List<dynamic>)
                 .firstWhere((id) => id != _currentUser!.id);
 
+            final lastSeenMessage = (chatData['lastSeenMessage']
+                as Map<String, dynamic>?)?[_currentUser!.id];
+            final lastMessageTimestamp =
+                chatData['lastMessageTimestamp'] as Timestamp?;
+            final lastSenderId = chatData['lastSenderId'] as String?;
+            final hasUnreadMessages = lastSenderId != _currentUser!.id &&
+                (lastSeenMessage == null ||
+                    (lastMessageTimestamp != null &&
+                        lastMessageTimestamp
+                            .toDate()
+                            .isAfter(lastSeenMessage.toDate())));
+            final isMessageSeen = lastSenderId == _currentUser!.id &&
+                (chatData['lastSeenMessage']
+                        as Map<String, dynamic>?)?[otherUserId] !=
+                    null &&
+                lastMessageTimestamp != null &&
+                ((chatData['lastSeenMessage']
+                        as Map<String, dynamic>?)?[otherUserId] as Timestamp)
+                    .toDate()
+                    .isAfter(lastMessageTimestamp.toDate());
+
             return FutureBuilder<DocumentSnapshot>(
               future: FirebaseFirestore.instance
                   .collection('users')
@@ -159,14 +181,30 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   title: Text(otherUser.name),
                   subtitle: Text(chatData['lastMessage'] ?? 'No messages yet'),
-                  trailing: chatData['lastMessageTimestamp'] != null
-                      ? Text(
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (hasUnreadMessages)
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                          ),
+                        )
+                      else if (isMessageSeen)
+                        Icon(Icons.done_all, color: Colors.blue, size: 20),
+                      SizedBox(width: 8),
+                      if (chatData['lastMessageTimestamp'] != null)
+                        Text(
                           DateFormat('MMM d, HH:mm').format(
                             (chatData['lastMessageTimestamp'] as Timestamp)
                                 .toDate(),
                           ),
-                        )
-                      : null,
+                        ),
+                    ],
+                  ),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -221,6 +259,11 @@ class _ChatScreenState extends State<ChatScreen> {
         'participants': [_currentUser!.id, otherUser.id],
         'lastMessage': null,
         'lastMessageTimestamp': null,
+        'lastSeenMessage': {
+          _currentUser!.id: null,
+          otherUser.id: null,
+        },
+        'lastSenderId': null,
       });
 
       Navigator.push(

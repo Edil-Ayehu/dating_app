@@ -38,7 +38,28 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     setState(() {
       _isLoading = false;
     });
+    _updateLastSeenMessage();
   }
+
+Future<void> _updateLastSeenMessage() async {
+  if (_currentUser != null) {
+    final chatDoc = await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(widget.chatId)
+        .get();
+    
+    final lastSenderId = chatDoc.data()?['lastSenderId'];
+    
+    if (lastSenderId != null && lastSenderId != _currentUser!.id) {
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(widget.chatId)
+          .update({
+        'lastSeenMessage.${_currentUser!.id}': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+}
 
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty || _currentUser == null) return;
@@ -63,6 +84,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       'lastMessage': _messageController.text.trim(),
       'lastMessageTimestamp': FieldValue.serverTimestamp(),
       'lastSenderName': _currentUser!.name,
+      'lastSenderId': _currentUser!.id,
     });
 
     _messageController.clear();
