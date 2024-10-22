@@ -247,10 +247,21 @@ class _ChatScreenState extends State<ChatScreen> {
           return Center(child: Text('No chats yet'));
         }
 
+        // Sort the chats based on lastMessageTimestamp
+        final sortedDocs = snapshot.data!.docs.toList()
+          ..sort((a, b) {
+            final aTimestamp = a['lastMessageTimestamp'] as Timestamp?;
+            final bTimestamp = b['lastMessageTimestamp'] as Timestamp?;
+            if (aTimestamp == null && bTimestamp == null) return 0;
+            if (aTimestamp == null) return 1;
+            if (bTimestamp == null) return -1;
+            return bTimestamp.compareTo(aTimestamp);
+          });
+
         return ListView.builder(
-          itemCount: snapshot.data!.docs.length,
+          itemCount: sortedDocs.length,
           itemBuilder: (context, index) {
-            final chatDoc = snapshot.data!.docs[index];
+            final chatDoc = sortedDocs[index];
             final chatData = chatDoc.data() as Map<String, dynamic>;
             final otherUserId = (chatData['participants'] as List<dynamic>)
                 .firstWhere((id) => id != _currentUser!.id);
